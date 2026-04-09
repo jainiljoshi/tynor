@@ -305,7 +305,7 @@ class AccountMove(models.Model):
             body=body,
             message_type="comment",
             subtype_xmlid="mail.mt_note",
-            attachment_ids=[(4, chatter_attachment.id)],
+            attachment_ids=[chatter_attachment.id],
         )
         self.with_context(tynor_skip_bridge=True).write({"tynor_paid_chatter_posted": True})
         return True
