@@ -310,7 +310,7 @@
             <attribute name="style">padding-top: 14px !important;</attribute>
         </xpath>
         <xpath expr="//div[hasclass('d-flex') and hasclass('justify-content-between')]//img[hasclass('o_company_logo')]" position="attributes">
-            <attribute name="t-att-src">'/logo.png?company=%s' % company.id</attribute>
+            <attribute name="t-att-src">image_data_uri(company.logo)</attribute>
             <attribute name="style">margin-top: 0 !important; background: transparent !important;</attribute>
         </xpath>
     </template>
@@ -320,7 +320,7 @@
             <attribute name="style">padding-top: 14px !important;</attribute>
         </xpath>
         <xpath expr="//img[hasclass('o_company_logo') or hasclass('o_company_logo_big') or hasclass('o_company_logo_mid')]" position="attributes">
-            <attribute name="t-att-src">'/logo.png?company=%s' % company.id</attribute>
+            <attribute name="t-att-src">image_data_uri(company.logo)</attribute>
             <attribute name="style">margin-top: 0 !important; background: transparent !important;</attribute>
         </xpath>
     </template>
@@ -330,7 +330,7 @@
             <attribute name="style">padding-top: 14px !important; vertical-align: top !important;</attribute>
         </xpath>
         <xpath expr="//img[hasclass('o_company_logo') or hasclass('o_company_logo_big') or hasclass('o_company_logo_mid')]" position="attributes">
-            <attribute name="t-att-src">'/logo.png?company=%s' % company.id</attribute>
+            <attribute name="t-att-src">image_data_uri(company.logo)</attribute>
             <attribute name="style">margin-top: 0 !important; background: transparent !important; max-height: 68px !important; width: auto !important; height: auto !important; object-fit: contain !important;</attribute>
         </xpath>
     </template>
@@ -355,7 +355,7 @@
             <td valign="middle" align="right" t-if="(record and record._fields.get('company_id') and record.company_id) or company">
                 <t t-set="mail_company" t-value="(record and record._fields.get('company_id') and record.company_id) or company"/>
                 <img
-                    t-att-src="'/logo.png?company=%s' % mail_company.id"
+                    t-att-src="image_data_uri(mail_company.logo)"
                     style="padding: 0px; margin: 0px; height: 48px;"
                     t-att-alt="'%s' % mail_company.name"
                 />

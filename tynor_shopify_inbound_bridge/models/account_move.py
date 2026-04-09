@@ -226,8 +226,6 @@ class AccountMove(models.Model):
             return False
         if self.payment_state != "paid" or self.tynor_paid_email_sent:
             return False
-        if not self._tynor_is_shopify_related_invoice():
-            return False
         recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
         if not recipient_email:
             return False
@@ -297,9 +295,9 @@ class AccountMove(models.Model):
             return False
 
         recipient = recipient_email or (self.partner_id.email or self.commercial_partner_id.email or "").strip()
-        body = _("Invoice PDF attached in chatter for paid Shopify order.")
+        body = _("Invoice PDF attached in chatter for paid invoice.")
         if recipient:
-            body = _("Invoice email auto-sent for paid Shopify order to <b>%s</b>. PDF attached in chatter.") % recipient
+            body = _("Invoice email auto-sent for paid invoice to <b>%s</b>. PDF attached in chatter.") % recipient
 
         self.message_post(
             body=body,
@@ -352,7 +350,7 @@ class AccountMove(models.Model):
                     if not self.env.context.get("tynor_disable_paid_email"):
                         if not move.tynor_paid_email_sent:
                             move._tynor_send_paid_invoice_email()
-                    if move.tynor_paid_email_sent and not move.tynor_paid_chatter_posted:
+                    if not move.tynor_paid_chatter_posted:
                         move._tynor_post_paid_invoice_pdf_in_chatter()
 
                 if move._tynor_get_existing_bridge_payment() or move.payment_state == "paid":
