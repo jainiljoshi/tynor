@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="shopify_inventory_dashboard.InventoryDashboard">
+        <div class="o_shopify_inventory_dashboard">
+            <div class="o_sid_header">
+                <h1>Inventory Pulse</h1>
+                <div class="o_sid_controls">
+                    <label>Low Stock Threshold</label>
+                    <input type="number" min="0" t-model.number="state.threshold"/>
+                    <button type="button" class="btn btn-primary" t-on-click="loadData">Refresh</button>
+                </div>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="o_sid_loading">Loading dashboard...</div>
+            </t>
+            <t t-else="">
+                <div class="o_sid_cards">
+                    <div class="o_sid_card">
+                        <div class="o_sid_card_label">Sync Score</div>
+                        <div class="o_sid_card_value"><t t-esc="state.kpis.inventory_sync_score"/>%</div>
+                    </div>
+                    <div class="o_sid_card">
+                        <div class="o_sid_card_label">Storable Products</div>
+                        <div class="o_sid_card_value"><t t-esc="state.kpis.total_products"/></div>
+                    </div>
+                    <div class="o_sid_card">
+                        <div class="o_sid_card_label">In Stock</div>
+                        <div class="o_sid_card_value"><t t-esc="state.kpis.in_stock_products"/></div>
+                    </div>
+                    <div class="o_sid_card o_sid_warn">
+                        <div class="o_sid_card_label">Low Stock</div>
+                        <div class="o_sid_card_value"><t t-esc="state.kpis.low_stock_products"/></div>
+                    </div>
+                    <div class="o_sid_card o_sid_danger">
+                        <div class="o_sid_card_label">Out Of Stock</div>
+                        <div class="o_sid_card_value"><t t-esc="state.kpis.out_of_stock_products"/></div>
+                    </div>
+                    <div class="o_sid_card">
+                        <div class="o_sid_card_label">Total Quantity</div>
+                        <div class="o_sid_card_value"><t t-esc="state.kpis.total_qty"/></div>
+                    </div>
+                </div>
+
+                <div class="o_sid_tables">
+                    <div class="o_sid_panel">
+                        <h3>Low Stock Items</h3>
+                        <div class="o_sid_table_wrap">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr><th>SKU</th><th>Product</th><th class="text-end">Qty</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="state.lowStockLines" t-as="line" t-key="line.id">
+                                        <td><t t-esc="line.sku"/></td>
+                                        <td><t t-esc="line.name"/></td>
+                                        <td class="text-end"><t t-esc="line.qty"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="o_sid_panel">
+                        <h3>Out Of Stock</h3>
+                        <div class="o_sid_table_wrap">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr><th>SKU</th><th>Product</th><th class="text-end">Qty</th></tr>
+                                </thead>
+                                <tbody>
+                                    <tr t-foreach="state.outOfStockLines" t-as="line" t-key="line.id">
+                                        <td><t t-esc="line.sku"/></td>
+                                        <td><t t-esc="line.name"/></td>
+                                        <td class="text-end"><t t-esc="line.qty"/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="o_sid_panel o_sid_issues">
+                    <h3>Inventory Sync Issues</h3>
+                    <div class="o_sid_table_wrap o_sid_table_wrap_large">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr><th>Status</th><th>Ref</th><th>Name</th><th class="text-end">Current</th><th class="text-end">Expected</th><th>Details</th><th>Action</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="state.issues" t-as="issue" t-key="issue.id">
+                                    <td><t t-esc="issue.status"/></td>
+                                    <td><t t-esc="issue.ref"/></td>
+                                    <td><t t-esc="issue.name"/></td>
+                                    <td class="text-end"><t t-esc="issue.current_value"/></td>
+                                    <td class="text-end"><t t-esc="issue.expected_value"/></td>
+                                    <td><t t-esc="issue.details"/></td>
+                                    <td>
+                                        <button
+                                            t-if="issue.auto_fix_available"
+                                            type="button"
+                                            class="btn btn-sm btn-primary"
+                                            t-on-click="() => this.fixIssue(issue.id)"
+                                            t-att-disabled="state.fixingIssueId === issue.id ? true : undefined"
+                                        >
+                                            <t t-if="state.fixingIssueId === issue.id">Fixing...</t>
+                                            <t t-else="">Fix Sync</t>
+                                        </button>
+                                        <span t-else="" class="text-muted">Manual</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="o_sid_panel">
+                    <div class="o_sid_reconcile_head">
+                        <h3>Sustainable Inventory Match (Sheet vs Odoo)</h3>
+                        <div>
+                            <button class="btn btn-secondary" type="button" t-on-click="() => this.runReconcile(false)">Run Match</button>
+                            <button class="btn btn-primary" type="button" t-on-click="() => this.runReconcile(true)">Apply Quantity Sync</button>
+                        </div>
+                    </div>
+                    <div class="o_sid_kpi_grid" t-if="state.reconcile.summary">
+                        <div>Sync %: <strong><t t-esc="state.reconcile.summary.sync_percent"/>%</strong></div>
+                        <div>Sheet SKUs: <strong><t t-esc="state.reconcile.summary.sheet_skus"/></strong></div>
+                        <div>Matched SKUs: <strong><t t-esc="state.reconcile.summary.matched_skus"/></strong></div>
+                        <div>Missing SKUs: <strong><t t-esc="state.reconcile.summary.missing_skus"/></strong></div>
+                        <div>Qty Mismatch: <strong><t t-esc="state.reconcile.summary.qty_mismatch"/></strong></div>
+                        <div>Needed Space (m3): <strong><t t-esc="state.reconcile.summary.required_space_m3"/></strong></div>
+                    </div>
+                    <div class="o_sid_table_wrap o_sid_table_wrap_large">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>SKU</th><th>Product</th><th class="text-end">Current</th><th class="text-end">Target</th><th class="text-end">Delta</th><th>Location</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="state.reconcile.lines || []" t-as="line" t-key="line.sku + line.location">
+                                    <td><t t-esc="line.sku"/></td>
+                                    <td><t t-esc="line.product"/></td>
+                                    <td class="text-end"><t t-esc="line.current_qty"/></td>
+                                    <td class="text-end"><t t-esc="line.target_qty"/></td>
+                                    <td class="text-end"><t t-esc="line.delta_qty"/></td>
+                                    <td><t t-esc="line.location"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

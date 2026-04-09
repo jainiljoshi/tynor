@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="shopify_inventory_wizard_form_view" model="ir.ui.view">
+        <field name="name">shopify.inventory.wizrd.form.view</field>
+        <field name="model">shopify.inventory.update</field>
+        <field name="arch" type="xml">
+            <form string="Select Instance">
+                <sheet>
+                    <div>
+                        <p colspan="2" class="alert alert-warning" role="alert">
+                            <u>
+                                <h3 style="font-weight:bold;color:#7d5a29">Note :</h3>
+                            </u>
+                            <b>
+                                Are you sure you want to import inventory from this instance?
+                            </b>
+                            <br/><br/>
+                            <b>
+                            <field name="current_message_display" string =""/> 
+                            </b> 
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="shopify_instance_id" required="1" options="{'no_create':True,'no_create_edit':True}"/>
+                    </group>
+
+                    <footer>
+                        <button name="import_shopify_inventory" string="Import Inventory" type="object"
+                                class="oe_highlight"/>
+                        <button string="Cancel" class="oe_highlight" special="cancel"/>
+                    </footer>
+
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="shopify_inventory_export_wizard_form_view" model="ir.ui.view">
+        <field name="name">shopify.inventory.export.wizrd.form.view</field>
+        <field name="model">shopify.export.update</field>
+        <field name="arch" type="xml">
+            <form string="Select Instance">
+                <sheet>
+                    <div>
+                        <p colspan="2" class="alert alert-warning" role="alert">
+                            <u>
+                                <h3 style="font-weight:bold;color:#7d5a29">Note :</h3>
+                            </u>
+                            <b>
+                            Updating inventory in Shopify will overwrite the values in Shopify. Ensure the data is correct before proceeding. 
+                            Orders need to be imported to Odoo, and quantities must be validated to match Shopify.
+                            If an order is fulfilled in Shopify, it must be validated and fulfilled in Odoo to ensure correct quantity.
+                            </b>       
+                            <br/><br/>
+                            <b>
+                                The export process supports up to 5,000 inventory updates at a time. If you have more than 5,000 inventory updates, please repeat the process as needed.
+                            </b>                                                 
+                            <br/><br/>
+                            <b>
+                                Are you sure you want to export inventory to this instance?
+                            </b>
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="shopify_instance_id" required="1" options="{'no_create':True,'no_create_edit':True}"/>
+                    </group>
+
+                    <footer>
+                        <button name="export_shopify_inventory" string="Export Inventory" type="object"
+                                class="oe_highlight"/>
+                        <button string="Cancel" class="oe_highlight" special="cancel"/>
+                    </footer>
+
+                </sheet>
+            </form>
+        </field>
+    </record>    
+
+    <record id="action_wizard_shopify_update_inventory" model="ir.actions.act_window">
+        <field name="name">Shopify - Import Inventory</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">shopify.inventory.update</field>
+        <field name="view_id" ref="shopify_inventory_wizard_form_view"/>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    <record id="action_wizard_shopify_export_inventory" model="ir.actions.act_window">
+        <field name="name">Shopify - Export Latest Inventory Updates</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">shopify.export.update</field>
+        <field name="view_id" ref="shopify_inventory_export_wizard_form_view"/>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+</odoo>

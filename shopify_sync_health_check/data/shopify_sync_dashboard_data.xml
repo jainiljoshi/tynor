@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="shopify_sync_dashboard_default" model="shopify.sync.dashboard">
+        <field name="name">Shopify Sync Health</field>
+        <field name="export_folder">/Users/jainiljoshi/workspace/odoo/19.2/custom/exported data</field>
+    </record>
+</odoo>

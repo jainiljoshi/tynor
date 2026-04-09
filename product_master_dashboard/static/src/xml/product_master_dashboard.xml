@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="product_master_dashboard.ProductMasterDashboard">
+        <div class="o_product_master_dashboard">
+            <div class="o_pmd_header">
+                <div>
+                    <h1>Product Master</h1>
+                    <p>Single place to review catalog health and jump into product kanban.</p>
+                </div>
+                <div class="o_pmd_actions">
+                    <button type="button" class="btn btn-secondary" t-on-click="loadData">Refresh</button>
+                    <button type="button" class="btn btn-primary" t-on-click="openKanban">Open Full Kanban</button>
+                </div>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="o_pmd_loading">Loading product dashboard...</div>
+            </t>
+            <t t-else="">
+                <div class="o_pmd_kpis">
+                    <div class="o_pmd_kpi">
+                        <span>Total Templates</span>
+                        <strong><t t-esc="state.kpis.total_templates"/></strong>
+                    </div>
+                    <div class="o_pmd_kpi">
+                        <span>Storable Templates</span>
+                        <strong><t t-esc="state.kpis.storable_templates"/></strong>
+                    </div>
+                    <div class="o_pmd_kpi">
+                        <span>Active Templates</span>
+                        <strong><t t-esc="state.kpis.active_templates"/></strong>
+                    </div>
+                    <div class="o_pmd_kpi o_good">
+                        <span>In-stock Variants</span>
+                        <strong><t t-esc="state.kpis.in_stock_variants"/></strong>
+                    </div>
+                    <div class="o_pmd_kpi o_warn">
+                        <span>Out-of-stock Variants</span>
+                        <strong><t t-esc="state.kpis.out_of_stock_variants"/></strong>
+                    </div>
+                </div>
+
+                <div class="o_pmd_search_row">
+                    <input
+                        type="text"
+                        class="form-control o_pmd_search_input"
+                        placeholder="Search products by name or SKU..."
+                        t-model="state.query"
+                    />
+                    <span class="o_pmd_result_count">
+                        <t t-esc="filteredCards.length"/> results
+                    </span>
+                </div>
+
+                <div class="o_pmd_grid_wrap">
+                    <div class="o_pmd_grid">
+                        <div class="o_pmd_card" t-foreach="filteredCards" t-as="card" t-key="card.id">
+                            <img t-att-src="card.image_url" alt="Product"/>
+                            <div class="o_pmd_body">
+                                <h4><t t-esc="card.name"/></h4>
+                                <div class="o_pmd_content_split">
+                                    <div class="o_pmd_content_main">
+                                        <div class="o_pmd_meta">
+                                            <span>SKU: <t t-esc="card.sku or '-'"/></span>
+                                            <span>Price: $<t t-esc="card.sale_price"/></span>
+                                            <span>Stock: <t t-esc="card.stock_qty"/></span>
+                                        </div>
+                                        <div class="o_pmd_tag" t-att-class="card.is_storable ? 'o_yes' : 'o_no'">
+                                            <t t-esc="card.is_storable ? 'Storable' : 'Non-storable'"/>
+                                        </div>
+                                    </div>
+                                    <div class="o_pmd_warehouse_side" t-if="card.warehouse_stock and card.warehouse_stock.length">
+                                        <div class="o_pmd_warehouse_side_title">Warehouse Stock</div>
+                                        <div class="o_pmd_warehouse_spark">
+                                            <div class="o_pmd_spark_col" t-foreach="card.warehouse_stock" t-as="wh" t-key="wh.warehouse_id">
+                                                <div class="o_pmd_spark_track">
+                                                    <div
+                                                        class="o_pmd_spark_fill"
+                                                        t-att-class="wh.qty &lt; 0 ? 'o_neg' : (wh.qty == 0 ? 'o_zero' : '')"
+                                                        t-att-style="'height:' + warehouseSparkHeight(card, wh.qty)"
+                                                    />
+                                                </div>
+                                                <span class="o_pmd_spark_label" t-att-title="wh.warehouse_name"><t t-esc="warehouseShortName(wh.warehouse_name)"/></span>
+                                                <span class="o_pmd_spark_value"><t t-esc="formatQty(wh.qty)"/></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

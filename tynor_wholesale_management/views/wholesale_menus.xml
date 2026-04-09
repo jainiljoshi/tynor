@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        
+        <!-- Action: Wholesale Applications (Leads/Opps with business type) -->
+        <record id="action_wholesale_applications" model="ir.actions.act_window">
+            <field name="name">Applications</field>
+            <field name="res_model">crm.lead</field>
+            <field name="view_mode">kanban,tree,form</field>
+            <field name="domain">[('x_wholesale_business_type', '!=', False)]</field>
+            <field name="context">{'default_x_wholesale_business_type': 'retail'}</field>
+            <field name="help" type="html">
+              <p class="o_view_nocontent_smiling_face">
+                No wholesale applications yet!
+              </p>
+            </field>
+        </record>
+
+        <!-- Action: Wholesale Partners (Tag: Wholesale) -->
+        <record id="action_wholesale_partners" model="ir.actions.act_window">
+            <field name="name">Approved Wholesalers</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">kanban,tree,form</field>
+            <field name="domain">[('category_id.name', '=', 'Wholesale')]</field>
+            <field name="context">{}</field>
+        </record>
+
+        <!-- Action: Wholesale Orders -->
+        <record id="action_wholesale_orders" model="ir.actions.act_window">
+            <field name="name">Wholesale Orders</field>
+            <field name="res_model">sale.order</field>
+            <field name="view_mode">tree,form</field>
+            <field name="domain">[('partner_id.category_id.name', '=', 'Wholesale')]</field>
+            <field name="context">{}</field>
+        </record>
+
+        <!-- Top Level Menu -->
+        <menuitem id="menu_wholesale_root"
+                  name="Wholesale"
+                  web_icon="tynor_wholesale_management,static/description/icon.png"
+                  groups="group_wholesale_manager"
+                  sequence="25"/>
+                  
+        <!-- Sub Menus -->
+        <menuitem id="menu_wholesale_apps"
+                  name="Applications"
+                  parent="menu_wholesale_root"
+                  action="action_wholesale_applications"
+                  sequence="1"/>
+
+        <menuitem id="menu_wholesale_customers"
+                  name="Wholesalers"
+                  parent="menu_wholesale_root"
+                  action="action_wholesale_partners"
+                  sequence="2"/>
+
+        <menuitem id="menu_wholesale_orders"
+                  name="Orders"
+                  parent="menu_wholesale_root"
+                  action="action_wholesale_orders"
+                  sequence="3"/>
+
+    </data>
+</odoo>

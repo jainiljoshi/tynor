@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="tynor_payment_method_afterpay" model="tynor.payment.journal.map">
+            <field name="name">Afterpay</field>
+            <field name="method_key">afterpay</field>
+            <field name="sequence">10</field>
+            <field name="journal_type">bank</field>
+            <field name="auto_create_journal">True</field>
+        </record>
+
+        <record id="tynor_payment_method_paypal" model="tynor.payment.journal.map">
+            <field name="name">PayPal</field>
+            <field name="method_key">paypal</field>
+            <field name="sequence">20</field>
+            <field name="journal_type">bank</field>
+            <field name="auto_create_journal">True</field>
+        </record>
+
+        <record id="tynor_payment_method_mastercard" model="tynor.payment.journal.map">
+            <field name="name">Mastercard</field>
+            <field name="method_key">mastercard</field>
+            <field name="sequence">30</field>
+            <field name="journal_type">bank</field>
+            <field name="auto_create_journal">True</field>
+        </record>
+
+        <record id="tynor_payment_method_cash" model="tynor.payment.journal.map">
+            <field name="name">Cash</field>
+            <field name="method_key">cash</field>
+            <field name="sequence">40</field>
+            <field name="journal_type">cash</field>
+            <field name="auto_create_journal">True</field>
+        </record>
+
+        <record id="tynor_payment_method_manual" model="tynor.payment.journal.map">
+            <field name="name">Manual</field>
+            <field name="method_key">manual</field>
+            <field name="sequence">50</field>
+            <field name="journal_type">bank</field>
+            <field name="auto_create_journal">True</field>
+        </record>
+
+        <record id="tynor_payment_method_mydeal" model="tynor.payment.journal.map">
+            <field name="name">MyDeal</field>
+            <field name="method_key">mydeal</field>
+            <field name="sequence">60</field>
+            <field name="journal_type">bank</field>
+            <field name="auto_create_journal">True</field>
+        </record>
+    </data>
+</odoo>

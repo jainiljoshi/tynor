@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_sync_dashboard_tree" model="ir.ui.view">
+        <field name="name">shopify.sync.dashboard.tree</field>
+        <field name="model">shopify.sync.dashboard</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="last_check_at"/>
+                <field name="overall_score"/>
+                <field name="customer_score"/>
+                <field name="product_score"/>
+                <field name="inventory_score"/>
+                <field name="order_score"/>
+                <field name="issue_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_sync_dashboard_form" model="ir.ui.view">
+        <field name="name">shopify.sync.dashboard.form</field>
+        <field name="model">shopify.sync.dashboard</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_refresh_sheets" type="object" string="Refresh Sheets" class="btn-secondary"/>
+                    <button name="action_run_health_check" type="object" string="Run Health Check" class="btn-primary"/>
+                    <button name="action_refresh_inventory_dashboard" type="object" string="Refresh Inventory KPI" class="btn-secondary"/>
+                    <button name="action_import_customers" type="object" string="Import Customers" class="btn-secondary"/>
+                    <button name="action_import_products" type="object" string="Import Products/Media" class="btn-secondary"/>
+                    <button name="action_import_inventory" type="object" string="Import Inventory" class="btn-secondary"/>
+                    <button name="action_import_orders" type="object" string="Import Orders" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button type="object" name="action_open_issues" class="oe_stat_button" icon="fa-exclamation-triangle">
+                            <field name="issue_count" string="Issues" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="export_folder"/>
+                            <field name="last_check_at" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="overall_score" readonly="1"/>
+                            <field name="customer_score" readonly="1"/>
+                            <field name="product_score" readonly="1"/>
+                            <field name="inventory_score" readonly="1"/>
+                            <field name="order_score" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Customers">
+                            <group>
+                                <field name="customer_total" readonly="1"/>
+                                <field name="customer_correct" readonly="1"/>
+                                <field name="customer_partial" readonly="1"/>
+                                <field name="customer_false" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Products">
+                            <group>
+                                <field name="product_total" readonly="1"/>
+                                <field name="product_correct" readonly="1"/>
+                                <field name="product_partial" readonly="1"/>
+                                <field name="product_false" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Inventory">
+                            <group>
+                                <field name="inventory_total" readonly="1"/>
+                                <field name="inventory_correct" readonly="1"/>
+                                <field name="inventory_partial" readonly="1"/>
+                                <field name="inventory_false" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Orders">
+                            <group>
+                                <field name="order_total" readonly="1"/>
+                                <field name="order_correct" readonly="1"/>
+                                <field name="order_partial" readonly="1"/>
+                                <field name="order_false" readonly="1"/>
+                            </group>
+                        </page>
+                        <page string="Inventory Dashboard">
+                            <group>
+                                <field name="low_stock_threshold"/>
+                                <field name="inv_kpi_total_products" readonly="1"/>
+                                <field name="inv_kpi_in_stock_products" readonly="1"/>
+                                <field name="inv_kpi_out_of_stock_products" readonly="1"/>
+                                <field name="inv_kpi_low_stock_products" readonly="1"/>
+                                <field name="inv_kpi_total_qty" readonly="1"/>
+                            </group>
+                            <field name="inventory_kpi_line_ids" readonly="1">
+                                <list>
+                                    <field name="product_id"/>
+                                    <field name="sku"/>
+                                    <field name="qty_available"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Source Sheets">
+                            <field name="sheet_ids">
+                                <list>
+                                    <field name="sheet_type"/>
+                                    <field name="status"/>
+                                    <field name="file_name"/>
+                                    <field name="file_path"/>
+                                    <field name="use_all_matching_files"/>
+                                    <field name="manual_file_path"/>
+                                    <button name="action_apply_manual_file_path" type="object" string="Use Path"/>
+                                    <field name="upload_file" filename="upload_filename"/>
+                                    <field name="upload_filename"/>
+                                    <button name="action_apply_uploaded_file" type="object" string="Upload"/>
+                                    <field name="row_count"/>
+                                    <field name="size_bytes"/>
+                                    <field name="file_mtime"/>
+                                </list>
+                                <form>
+                                    <group>
+                                        <field name="sheet_type"/>
+                                        <field name="status" readonly="1"/>
+                                        <field name="file_name" readonly="1"/>
+                                        <field name="file_path" readonly="1"/>
+                                        <field name="use_all_matching_files"/>
+                                        <field name="row_count" readonly="1"/>
+                                        <field name="size_bytes" readonly="1"/>
+                                        <field name="file_mtime" readonly="1"/>
+                                    </group>
+                                    <group>
+                                        <field name="manual_file_path"/>
+                                        <button name="action_apply_manual_file_path" type="object" string="Use Existing File Path" class="btn-secondary"/>
+                                    </group>
+                                    <group>
+                                        <field name="upload_file" filename="upload_filename"/>
+                                        <field name="upload_filename"/>
+                                        <button name="action_apply_uploaded_file" type="object" string="Upload &amp; Use File" class="btn-secondary"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Issues">
+                            <field name="issue_ids" readonly="1">
+                                <list>
+                                    <field name="issue_type"/>
+                                    <field name="status"/>
+                                    <field name="external_ref"/>
+                                    <field name="name"/>
+                                    <field name="details"/>
+                                    <button name="action_manual_fix" type="object" string="Manual Fix"/>
+                                    <button name="action_automated_fix" type="object" string="Automated Fix"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_sync_issue_tree" model="ir.ui.view">
+        <field name="name">shopify.sync.issue.tree</field>
+        <field name="model">shopify.sync.issue</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="dashboard_id"/>
+                <field name="issue_type"/>
+                <field name="status"/>
+                <field name="external_ref"/>
+                <field name="name"/>
+                <field name="details"/>
+                <button name="action_manual_fix" type="object" string="Manual Fix"/>
+                <button name="action_automated_fix" type="object" string="Automated Fix"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_sync_issue_form" model="ir.ui.view">
+        <field name="name">shopify.sync.issue.form</field>
+        <field name="model">shopify.sync.issue</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_manual_fix" type="object" string="Manual Fix" class="btn-secondary"/>
+                    <button name="action_automated_fix" type="object" string="Automated Fix" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group string="Fix Guidance">
+                        <field name="manual_fix_note" readonly="1"/>
+                        <field name="auto_fix_plan" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="dashboard_id"/>
+                        <field name="issue_type"/>
+                        <field name="status"/>
+                        <field name="external_ref"/>
+                        <field name="name"/>
+                    </group>
+                    <group>
+                        <field name="details"/>
+                        <field name="expected_value"/>
+                        <field name="current_value"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_shopify_sync_dashboard" model="ir.actions.act_window">
+        <field name="name">Sync Health Dashboard</field>
+        <field name="res_model">shopify.sync.dashboard</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="action_shopify_sync_issue" model="ir.actions.act_window">
+        <field name="name">Sync Issues</field>
+        <field name="res_model">shopify.sync.issue</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem
+        id="menu_shopify_sync_root"
+        name="Shopify Sync"
+        sequence="25"
+        web_icon="shopify_sync_health_check,static/description/icon.png"
+    />
+    <menuitem id="menu_shopify_sync_dashboard" name="Health Dashboard" parent="menu_shopify_sync_root" action="action_shopify_sync_dashboard" sequence="10"/>
+    <menuitem id="menu_shopify_sync_issues" name="Issues" parent="menu_shopify_sync_root" action="action_shopify_sync_issue" sequence="20"/>
+</odoo>

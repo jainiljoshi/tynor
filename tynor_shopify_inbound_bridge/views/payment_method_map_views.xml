@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_tynor_payment_journal_map_tree" model="ir.ui.view">
+        <field name="name">tynor.payment.journal.map.tree</field>
+        <field name="model">tynor.payment.journal.map</field>
+        <field name="arch" type="xml">
+            <list create="1" delete="1" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="method_key"/>
+                <field name="journal_type"/>
+                <field name="journal_id"/>
+                <field name="auto_create_journal"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_tynor_payment_journal_map_form" model="ir.ui.view">
+        <field name="name">tynor.payment.journal.map.form</field>
+        <field name="model">tynor.payment.journal.map</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="method_key"/>
+                            <field name="sequence"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="journal_type"/>
+                            <field name="journal_id"/>
+                            <field name="journal_code"/>
+                            <field name="auto_create_journal"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_tynor_payment_journal_map" model="ir.actions.act_window">
+        <field name="name">Payment Journal Mapping</field>
+        <field name="res_model">tynor.payment.journal.map</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem
+        id="menu_tynor_payment_journal_map"
+        name="Payment Journal Mapping"
+        parent="account.menu_finance_configuration"
+        action="action_tynor_payment_journal_map"
+        sequence="82"
+        groups="account.group_account_manager"
+    />
+</odoo>
+

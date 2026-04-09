@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_saleorder_tynor" model="ir.actions.report">
+        <field name="name">Tynor Quotation / Order</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">tynor_sale_report_custom.report_saleorder_tynor</field>
+        <field name="report_file">tynor_sale_report_custom.report_saleorder_tynor</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">'Tynor - %s' % (object.name or 'Order')</field>
+    </record>
+
+    <template id="report_saleorder_tynor">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="tynor_sale_report_custom.report_saleorder_document_tynor" t-lang="doc.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+
+    <template id="tynor_partner_contact_block">
+        <t t-set="tynor_partner_record" t-value="partner"/>
+        <t t-if="tynor_partner_record">
+            <t t-set="tynor_partner_name" t-value="(tynor_partner_record.name or '').strip()"/>
+            <t
+                t-set="tynor_partner_company"
+                t-value="(tynor_partner_record.commercial_company_name or (tynor_partner_record.parent_id.name or '')).strip()"
+            />
+            <div t-if="tynor_partner_name">
+                <span t-out="tynor_partner_name"/>
+            </div>
+            <div t-if="tynor_partner_company and tynor_partner_company.lower() != tynor_partner_name.lower()">
+                <span t-out="tynor_partner_company"/>
+            </div>
+            <address
+                t-out="tynor_partner_record"
+                t-options='{"widget": "contact", "fields": ["address", "phone"], "no_marker": True, "phone_icons": True}'
+            />
+        </t>
+    </template>
+
+    <template id="report_saleorder_document_tynor" inherit_id="sale.report_saleorder_document" primary="True">
+        <xpath expr="//div[hasclass('page')]" position="attributes">
+            <attribute name="class">page tynor-order-report</attribute>
+        </xpath>
+
+        <xpath expr="//div[@id='informations']" position="before">
+            <style>
+                .tynor-order-report .tynor-head-meta,
+                .tynor-invoice-report .tynor-head-meta {
+                    margin-top: 10px;
+                    margin-bottom: 12px;
+                }
+                .header .o_company_logo,
+                .header .o_company_logo_big,
+                .header .o_company_logo_mid {
+                    margin-top: 10px !important;
+                }
+                .tynor-order-report .tynor-line-image,
+                .tynor-invoice-report .tynor-line-image {
+                    border: 1px solid #e2e8f0;
+                    float: left;
+                    margin-right: 10px;
+                    max-height: 58px;
+                    max-width: 58px;
+                    object-fit: contain;
+                    background: #fff;
+                }
+                .tynor-order-report .tynor-line-extra,
+                .tynor-invoice-report .tynor-line-extra {
+                    clear: both;
+                    margin-top: 4px;
+                }
+                .tynor-order-report .tynor-small-label,
+                .tynor-invoice-report .tynor-small-label {
+                    font-size: 10px;
+                    color: #475569;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                    margin-top: 2px;
+                }
+                .tynor-order-report .o_company_logo,
+                .tynor-order-report .o_company_logo_big,
+                .tynor-order-report .o_company_logo_mid,
+                .tynor-invoice-report .o_company_logo,
+                .tynor-invoice-report .o_company_logo_big,
+                .tynor-invoice-report .o_company_logo_mid {
+                    background: transparent !important;
+                    mix-blend-mode: normal !important;
+                    width: auto !important;
+                    height: auto !important;
+                    max-height: 68px !important;
+                    max-width: 320px !important;
+                    object-fit: contain !important;
+                }
+            </style>
+            <div class="row tynor-head-meta">
+                <div class="col-8">
+                    <div t-if="doc.name and doc.name != '/'">
+                        <div
+                            t-field="doc.name"
+                            t-options="{'widget': 'barcode', 'width': 600, 'height': 100, 'img_style': 'width:220px;height:42px;'}"
+                        />
+                        <div class="tynor-small-label">Order Barcode</div>
+                    </div>
+                </div>
+                <div class="col-4 text-end" t-if="doc.partner_id.email">
+                    <strong>Email</strong><br/>
+                    <span t-field="doc.partner_id.email"/>
+                </div>
+            </div>
+        </xpath>
+
+        <xpath expr="//t[@t-call='web.external_layout']" position="before">
+            <t t-set="tynor_bill_partner" t-value="doc.partner_invoice_id or doc.partner_id"/>
+            <t t-set="tynor_ship_partner" t-value="doc.partner_shipping_id or tynor_bill_partner"/>
+            <t t-set="customized_address_layout">
+                <div class="address row mb-4">
+                    <div class="col-6">
+                        <strong class="d-block">Bill to</strong>
+                        <t t-set="partner" t-value="tynor_bill_partner"/>
+                        <t t-call="tynor_sale_report_custom.tynor_partner_contact_block"/>
+                    </div>
+                    <div class="col-6">
+                        <strong class="d-block">Ship to</strong>
+                        <t t-set="partner" t-value="tynor_ship_partner"/>
+                        <t t-call="tynor_sale_report_custom.tynor_partner_contact_block"/>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+
+        <xpath expr="//div[@id='informations']//div[@t-if='doc.user_id.name']" position="replace"/>
+
+        <xpath expr="//th[@name='th_taxes']/span" position="replace">
+            <span>GST</span>
+        </xpath>
+
+        <xpath expr="//td[@name='td_product_name']/span[@t-field='line.name']" position="before">
+            <t t-if="(not line.display_type or line.display_type == 'product') and line.product_id">
+                <img
+                    t-if="line.product_id.image_128 or line.product_id.product_tmpl_id.image_128"
+                    t-att-src="image_data_uri(line.product_id.product_tmpl_id.image_128 or line.product_id.image_128)"
+                    class="tynor-line-image"
+                    alt="Product"
+                />
+            </t>
+        </xpath>
+
+        <xpath expr="//td[@name='td_product_name']/span[@t-field='line.name']" position="after">
+            <t t-if="(not line.display_type or line.display_type == 'product') and line.product_id and line.product_id.barcode">
+                <div class="tynor-line-extra">
+                    <div
+                        t-field="line.product_id.barcode"
+                        t-options="{'widget': 'barcode', 'width': 450, 'height': 60, 'img_style': 'width:150px;height:26px;'}"
+                    />
+                    <div class="tynor-small-label">Barcode: <span t-field="line.product_id.barcode"/></div>
+                </div>
+            </t>
+        </xpath>
+
+        <xpath expr="//tr[@name='tr_note']//span[@t-field='line.name']" position="replace">
+            <span t-if="line.tynor_public_note_name" t-out="line.tynor_public_note_name"/>
+            <span t-elif="line.name" t-field="line.name"/>
+        </xpath>
+
+        <xpath expr="//p[span[@t-field='doc.payment_term_id.note']]" position="replace"/>
+
+        <xpath expr="//span[@name='order_note']" position="after">
+            <t t-set="tynor_terms_blob" t-value="(doc.note or '') + ' ' + (doc.payment_term_id.note or '')"/>
+            <div
+                class="mt-3"
+                name="tynor_how_to_pay_block"
+                t-if="'HOW TO PAY' not in tynor_terms_blob and 'How to Pay' not in tynor_terms_blob and 'how to pay' not in tynor_terms_blob"
+            >
+                <strong>HOW TO PAY</strong><br/>
+                Account Name: Australian Healthcare Supplies<br/>
+                BSB: 774-001<br/>
+                Account Number: 209 111 732<br/>
+                Email Remittances To: sales@tynor.com.au
+            </div>
+        </xpath>
+    </template>
+
+    <template id="report_invoice_document_tynor" inherit_id="account.report_invoice_document" primary="True">
+        <xpath expr="//div[hasclass('page')]" position="attributes">
+            <attribute name="class">page tynor-invoice-report</attribute>
+        </xpath>
+
+        <xpath expr="//div[@id='informations']" position="before">
+            <style>
+                .tynor-invoice-report .o_company_logo,
+                .tynor-invoice-report .o_company_logo_big,
+                .tynor-invoice-report .o_company_logo_mid {
+                    background: transparent !important;
+                    mix-blend-mode: normal !important;
+                    width: auto !important;
+                    height: auto !important;
+                    max-height: 68px !important;
+                    max-width: 320px !important;
+                    object-fit: contain !important;
+                }
+            </style>
+            <div class="row tynor-head-meta">
+                <div class="col-8">
+                    <div t-if="o.name and o.name != '/'">
+                        <div
+                            t-field="o.name"
+                            t-options="{'widget': 'barcode', 'width': 600, 'height': 100, 'img_style': 'width:220px;height:42px;'}"
+                        />
+                        <div class="tynor-small-label">Invoice Barcode</div>
+                    </div>
+                </div>
+                <div class="col-4 text-end" t-if="o.partner_id.email">
+                    <strong>Email</strong><br/>
+                    <span t-field="o.partner_id.email"/>
+                </div>
+            </div>
+        </xpath>
+
+        <xpath expr="//t[@t-set='information_block']" position="replace">
+            <t t-set="information_block"/>
+        </xpath>
+
+        <xpath expr="//t[@t-set='address']" position="replace">
+            <t t-set="tynor_bill_partner" t-value="o.partner_invoice_id or o.partner_id"/>
+            <t t-set="tynor_ship_partner" t-value="o.partner_shipping_id or tynor_bill_partner"/>
+            <t t-set="address">
+                <div class="address row mb-4">
+                    <div class="col-6">
+                        <strong class="d-block">Bill to</strong>
+                        <t t-set="partner" t-value="tynor_bill_partner"/>
+                        <t t-call="tynor_sale_report_custom.tynor_partner_contact_block"/>
+                    </div>
+                    <div class="col-6">
+                        <strong class="d-block">Ship to</strong>
+                        <t t-set="partner" t-value="tynor_ship_partner"/>
+                        <t t-call="tynor_sale_report_custom.tynor_partner_contact_block"/>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+
+        <xpath expr="//th[@name='th_taxes']/span" position="replace">
+            <span>GST</span>
+        </xpath>
+
+        <xpath expr="//td[@name='account_invoice_line_name']/span[@t-if='line.name']" position="before">
+            <t t-if="line.display_type == 'product' and line.product_id">
+                <img
+                    t-if="line.product_id.image_128 or line.product_id.product_tmpl_id.image_128"
+                    t-att-src="image_data_uri(line.product_id.product_tmpl_id.image_128 or line.product_id.image_128)"
+                    class="tynor-line-image"
+                    alt="Product"
+                />
+            </t>
+        </xpath>
+
+        <xpath expr="//td[@name='account_invoice_line_name']/span[@t-if='line.name']" position="after">
+            <t t-if="line.display_type == 'product' and line.product_id and line.product_id.barcode">
+                <div class="tynor-line-extra">
+                    <div
+                        t-field="line.product_id.barcode"
+                        t-options="{'widget': 'barcode', 'width': 450, 'height': 60, 'img_style': 'width:150px;height:26px;'}"
+                    />
+                    <div class="tynor-small-label">Barcode: <span t-field="line.product_id.barcode"/></div>
+                </div>
+            </t>
+        </xpath>
+
+        <xpath expr="//t[@t-elif='is_note']/td/span[@t-field='line.name']" position="replace">
+            <span t-if="line.tynor_public_note_name" t-out="line.tynor_public_note_name"/>
+            <span t-elif="line.name" t-field="line.name"/>
+        </xpath>
+    </template>
+
+    <template id="external_layout_wave_tynor_spacing" inherit_id="web.external_layout_wave">
+        <xpath expr="//div[hasclass('d-flex') and hasclass('justify-content-between')]" position="attributes">
+            <attribute name="style">padding-top: 42px !important;</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('d-flex') and hasclass('justify-content-between')]//img[hasclass('o_company_logo')]" position="attributes">
+            <attribute name="style">margin-top: 100px !important;</attribute>
+        </xpath>
+    </template>
+
+    <template id="company_address_list_tynor" inherit_id="web.company_address_list">
+        <xpath expr="//ul[@name='company_address_list']" position="inside">
+            <li t-if="company.email">
+                <span t-out="company.email"/>
+            </li>
+            <li t-if="company.website">
+                <span t-out="company.website"/>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="mail_notification_layout_tynor" inherit_id="mail.mail_notification_layout" primary="True">
+        <xpath expr="//div[a[contains(@href, 'odoo.com')]]" position="replace"/>
+    </template>
+
+    <template id="mail_notification_light_tynor" inherit_id="mail.mail_notification_light" primary="True">
+        <xpath expr="//td[@valign='middle' and @align='right']" position="replace">
+            <td valign="middle" align="right" t-if="(record and record._fields.get('company_id') and record.company_id) or company">
+                <t t-set="mail_company" t-value="(record and record._fields.get('company_id') and record.company_id) or company"/>
+                <img
+                    t-att-src="'/logo.png?company=%s' % mail_company.id"
+                    style="padding: 0px; margin: 0px; height: 48px;"
+                    t-att-alt="'%s' % mail_company.name"
+                />
+            </td>
+        </xpath>
+        <xpath expr="//tr[td/a[contains(@href, 'odoo.com')]]" position="replace"/>
+    </template>
+
+    <record id="sale.email_template_edi_sale" model="mail.template">
+        <field name="subject">{{ object.company_id.name }} {{ object.state in ('draft', 'sent') and 'Quotation' or 'Sales Order' }} {{ object.name or 'n/a' }}</field>
+        <field name="email_layout_xmlid">tynor_sale_report_custom.mail_notification_light_tynor</field>
+        <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Verdana,Arial,sans-serif;color:#1f2937;">
+    <p style="margin:0 0 14px;font-size:14px;">
+        Hello <t t-out="object.partner_id.name or ''"/>,
+    </p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.7;">
+        Your <strong><t t-out="object.state in ('draft', 'sent') and 'quotation' or 'sales order'"/></strong>
+        <strong t-out="object.name or ''"/> is ready.
+    </p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.7;">
+        Total: <strong t-out="format_amount(object.amount_total, object.currency_id) or ''"/>.<br/>
+        <t t-if="object.payment_term_id">
+            Payment Terms: <strong t-out="object.payment_term_id.name or ''"/><br/>
+        </t>
+    </p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.7;">
+        Please review the attached PDF and let us know if you have any questions.
+    </p>
+    <p style="margin:0;font-size:13px;line-height:1.7;">
+        Regards,<br/>
+        <t t-out="object.user_id.name or object.company_id.name"/>
+    </p>
+</div>
+        </field>
+        <field name="report_template_ids" eval="[(6, 0, [ref('tynor_sale_report_custom.action_report_saleorder_tynor')])]"/>
+    </record>
+
+    <record id="account.email_template_edi_invoice" model="mail.template">
+        <field name="subject">{{ object.company_id.name }} Invoice {{ object.name or 'n/a' }}</field>
+        <field name="email_layout_xmlid">tynor_sale_report_custom.mail_notification_light_tynor</field>
+        <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Verdana,Arial,sans-serif;color:#1f2937;">
+    <p style="margin:0 0 14px;font-size:14px;">
+        Hello <t t-out="object.partner_id.name or ''"/>,
+    </p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.7;">
+        Please find your invoice <strong t-out="object.name or ''"/> from <strong t-out="object.company_id.name or ''"/>.
+    </p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.7;">
+        Total: <strong t-out="format_amount(object.amount_total, object.currency_id) or ''"/>.<br/>
+        <t t-if="object.invoice_payment_term_id">
+            Payment Terms: <strong t-out="object.invoice_payment_term_id.name or ''"/><br/>
+        </t>
+        <t t-if="object.payment_state in ('paid', 'in_payment')">
+            Status: <strong>Paid</strong><br/>
+        </t>
+    </p>
+    <p style="margin:0;font-size:13px;line-height:1.7;">
+        Thanks for your business.
+    </p>
+</div>
+        </field>
+        <field name="report_template_ids" eval="[(6, 0, [ref('account.account_invoices')])]"/>
+    </record>
+</odoo>

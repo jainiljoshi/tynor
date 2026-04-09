@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_tynor_inbound_bridge" model="ir.ui.view">
+        <field name="name">sale.order.form.tynor.inbound.bridge</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='payment_term_id'][1]" position="after">
+                <field name="tynor_external_order_no" readonly="1"/>
+                <field name="tynor_external_payment_method" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
+

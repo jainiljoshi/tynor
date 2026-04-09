@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="action_product_master_dashboard" model="ir.actions.client">
+        <field name="name">Product Master Dashboard</field>
+        <field name="tag">product_master_dashboard.main</field>
+    </record>
+
+    <record id="action_product_master_kanban" model="ir.actions.act_window">
+        <field name="name">Product Master Kanban</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{'search_default_filter_to_sell': 1}</field>
+    </record>
+
+    <menuitem
+        id="menu_product_master_root"
+        name="Product Master"
+        sequence="18"
+        web_icon="product_master_dashboard,static/description/icon.png"
+    />
+    <menuitem
+        id="menu_product_master_dashboard"
+        name="Dashboard"
+        parent="menu_product_master_root"
+        action="action_product_master_dashboard"
+        sequence="1"
+    />
+    <menuitem
+        id="menu_product_master_kanban"
+        name="Products Kanban"
+        parent="menu_product_master_root"
+        action="action_product_master_kanban"
+        sequence="2"
+    />
+</odoo>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_tynor_custom_send" model="ir.ui.view">
+        <field name="name">sale.order.form.tynor.custom.send</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@id='quotation_send_primary']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//button[@id='quotation_send']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <xpath expr="//button[@id='quotation_send_primary']" position="after">
+                <button
+                    string="Send Tynor"
+                    id="quotation_send_tynor"
+                    name="action_tynor_quotation_send"
+                    type="object"
+                    context="{'validate_analytic': True, 'check_document_layout': True}"
+                    class="btn-primary"
+                    data-hotkey="g"
+                    invisible="state not in ('draft', 'sent', 'sale')"
+                />
+                <button
+                    string="Print Quote"
+                    id="quotation_print_tynor"
+                    name="%(tynor_sale_report_custom.action_report_saleorder_tynor)d"
+                    type="action"
+                    class="btn-secondary"
+                    data-hotkey="shift+i"
+                    invisible="state not in ('draft', 'sent', 'sale')"
+                />
+            </xpath>
+        </field>
+    </record>
+</odoo>

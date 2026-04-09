@@ -1,0 +1,17 @@
+# macOS / editor
+.DS_Store
+.vscode/
+.idea/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Local exports / temp data
+exported/
+exported data/
+*.csv
+*.zip
+*.log
+
+# Keep only module source + helper scripts explicitly if needed

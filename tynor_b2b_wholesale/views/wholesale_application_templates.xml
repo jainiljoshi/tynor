@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Add Wholesale to Main Website Menu -->
+        <record id="menu_wholesale_website" model="website.menu">
+            <field name="name">Wholesale</field>
+            <field name="url">/wholesale</field>
+            <field name="parent_id" ref="website.main_menu"/>
+            <field name="sequence">50</field>
+        </record>
+
+        <!-- Template for the Landing Page -->
+        <template id="b2b_landing_page" name="Wholesale Program">
+            <t t-call="website.layout">
+                <div id="wrap" class="oe_structure oe_empty">
+                    <!-- Hero Section -->
+                    <section class="s_cover parallax s_parallax_is_mutted bg-black-50 pt128 pb128" data-scroll-background-ratio="1">
+                        <div class="container text-center text-white">
+                            <h1 class="display-3 fw-bold mb-4">Tynor Wholesale Program</h1>
+                            <p class="lead mb-5">Join Australia's fastest-growing orthopedic supply network. Enjoy exclusive 40% VIP pricing, 30-day net terms, and priority shipping.</p>
+                            <a href="/b2b/apply" class="btn btn-primary btn-lg px-5 py-3 fw-semibold">Apply for Wholesale Access</a>
+                        </div>
+                    </section>
+                    
+                    <!-- Features Section -->
+                    <section class="s_features pt80 pb80 bg-200">
+                        <div class="container">
+                            <h2 class="text-center display-5 fw-bold mb-5">Why Partner With Us?</h2>
+                            <div class="row align-items-stretch">
+                                <div class="col-lg-4 pb-4">
+                                    <div class="card bg-white border-0 shadow-sm h-100 p-4">
+                                        <i class="fa fa-percent fa-3x text-primary mb-4 text-center"></i>
+                                        <h4 class="text-center fw-bold">40% VIP Discount</h4>
+                                        <p class="text-center text-muted">Automatically applied at checkout to all orders hitting the Minimum Order Quantity (MOQ) of 10 items.</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 pb-4">
+                                    <div class="card bg-white border-0 shadow-sm h-100 p-4">
+                                        <i class="fa fa-calendar fa-3x text-primary mb-4 text-center"></i>
+                                        <h4 class="text-center fw-bold">Net 30 Terms</h4>
+                                        <p class="text-center text-muted">Improve your cash flow. Approved partners gain instant access to flexible invoice payment terms.</p>
+                                    </div>
+                                </div>
+                                <div class="col-lg-4 pb-4">
+                                    <div class="card bg-white border-0 shadow-sm h-100 p-4">
+                                        <i class="fa fa-laptop fa-3x text-primary mb-4 text-center"></i>
+                                        <h4 class="text-center fw-bold">Self-Service Portal</h4>
+                                        <p class="text-center text-muted">Manage your invoices, track shipments, and execute 1-click reorders directly from your B2B dashboard.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </t>
+        </template>
+
+        <!-- Template for the Application Form -->
+        <template id="b2b_application_page" name="B2B Wholesale Application">
+            <t t-call="website.layout">
+                <div id="wrap" class="oe_structure oe_empty">
+                    <section class="s_text_image pt72 pb72 bg-200">
+                        <div class="container">
+                            <div class="row align-items-center">
+                                <div class="col-lg-12 text-center mb-5">
+                                    <h1 class="display-3 fw-bold">Become a Wholesale Partner</h1>
+                                    <p class="lead text-muted">Join Tynor's network of distributors, pharmacies, and physiotherapy clinics.</p>
+                                </div>
+                            </div>
+                            
+                            <div class="row justify-content-center">
+                                <div class="col-lg-8">
+                                    <div class="card shadow-sm border-0 rounded-3">
+                                        <div class="card-body p-5">
+                                            <form action="/b2b/submit" method="post" enctype="multipart/form-data">
+                                                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                                
+                                                <h4 class="mb-4 fw-bold">Company Information</h4>
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Company Name <span class="text-danger">*</span></label>
+                                                        <input type="text" name="company_name" class="form-control" required="1" placeholder="e.g. Sydney Health Supplies"/>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Tax ID (ABN) <span class="text-danger">*</span></label>
+                                                        <input type="text" name="x_wholesale_tax_id" class="form-control" required="1" placeholder="e.g. 12 345 678 901"/>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Business Type <span class="text-danger">*</span></label>
+                                                    <select name="x_wholesale_business_type" class="form-select" required="1">
+                                                        <option value="" disabled="1" selected="1">Select your business type...</option>
+                                                        <option value="pharmacy">Pharmacy</option>
+                                                        <option value="physio">Physiotherapist / Clinic</option>
+                                                        <option value="retail">Retailer</option>
+                                                        <option value="distributor">Distributor / Wholesaler</option>
+                                                    </select>
+                                                </div>
+
+                                                <h4 class="mb-4 mt-5 fw-bold">Contact Details</h4>
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Your Name <span class="text-danger">*</span></label>
+                                                        <input type="text" name="contact_name" class="form-control" required="1" placeholder="John Doe"/>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Email Address <span class="text-danger">*</span></label>
+                                                        <input type="email" name="email_from" class="form-control" required="1" placeholder="contact@company.com.au"/>
+                                                    </div>
+                                                </div>
+
+                                                <div class="row g-3 mb-4">
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">Phone Number <span class="text-danger">*</span></label>
+                                                        <input type="tel" name="phone" class="form-control" required="1" placeholder="0400 000 000"/>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <label class="form-label fw-bold">City / Suburb</label>
+                                                        <input type="text" name="city" class="form-control" placeholder="e.g. Sydney"/>
+                                                    </div>
+                                                </div>
+
+                                                <div class="mb-4">
+                                                    <label class="form-label fw-bold">Additional Notes / Inquiry</label>
+                                                    <textarea name="notes" class="form-control" rows="4" placeholder="Tell us about the volume or products you're looking for..."></textarea>
+                                                </div>
+
+                                                <div class="text-center mt-5">
+                                                    <button type="submit" class="btn btn-primary btn-lg px-5 py-3 fw-bold w-100">Submit Application</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </t>
+        </template>
+
+        <!-- Template for the Success Page -->
+        <template id="b2b_application_success" name="Application Received">
+            <t t-call="website.layout">
+                <div id="wrap">
+                    <div class="container mt-5 mb-5 text-center">
+                        <section class="s_text_image pt104 pb104">
+                            <div class="row justify-content-center">
+                                <div class="col-lg-8">
+                                    <div class="bg-success text-white p-4 rounded-circle d-inline-block mb-4 shadow-sm" style="width:100px; height:100px; line-height:70px; font-size:40px;">
+                                        <i class="fa fa-check"></i>
+                                    </div>
+                                    <h1 class="display-4 fw-bold">Application Received!</h1>
+                                    <p class="lead mt-4 text-muted">Thank you for verifying your business with Tynor Australia. Our Wholesale team is reviewing your application and checking your ABN. </p>
+                                    <p class="text-muted">You will receive an email containing a link to set your portal password and access the Wholesale VIP pricing catalog once approved.</p>
+                                    <div class="mt-5">
+                                        <a href="/" class="btn btn-outline-primary btn-lg px-5">Return to Shop</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </t>
+        </template>
+
+    </data>
+</odoo>

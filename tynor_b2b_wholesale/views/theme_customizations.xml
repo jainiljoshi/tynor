@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Extensions to CRM Lead to handle Wholesale approvals -->
+        <record id="crm_lead_view_form_wholesale" model="ir.ui.view">
+            <field name="name">crm.lead.form.wholesale</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//header" position="inside">
+                    <button name="action_approve_wholesale" 
+                            string="Approve Wholesale Account" 
+                            type="object" 
+                            class="oe_highlight" 
+                            invisible="type == 'opportunity'"/>
+                </xpath>
+                <xpath expr="//field[@name='phone']" position="after">
+                    <field name="x_wholesale_tax_id" string="Tax ID / ABN"/>
+                    <field name="x_wholesale_business_type" string="Business Type"/>
+                </xpath>
+            </field>
+        </record>
+
+
+
+    </data>
+</odoo>

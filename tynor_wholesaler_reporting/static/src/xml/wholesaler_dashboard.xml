@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve">
+    <t t-name="tynor_wholesaler_reporting.WholesalerDashboard">
+        <div class="o_wholesaler_dashboard">
+            <div class="o_wholesaler_header">
+                <div>
+                    <h1>Wholesaler</h1>
+                    <p>Wholesale financial snapshot with GST, refunds, fees and channel performance.</p>
+                </div>
+                <div class="o_wholesaler_controls">
+                    <div class="o_wholesaler_filters">
+                        <label for="wh_date_range">Range</label>
+                        <button
+                            id="wh_date_range"
+                            type="button"
+                            class="btn btn-outline-secondary o_wholesaler_range_btn text-start"
+                            t-ref="range-trigger"
+                            t-on-click="onDateRangeClick"
+                        >
+                            <i class="fa fa-calendar me-1"/>
+                            <t t-esc="dateRangeLabel"/>
+                        </button>
+                        <input type="text" class="d-none" t-ref="range-start"/>
+                        <input type="text" class="d-none" t-ref="range-end"/>
+                        <button type="button" class="btn btn-secondary" t-on-click="applyFilters">Apply</button>
+                        <button type="button" class="btn btn-light" t-on-click="clearFilters">Clear</button>
+                    </div>
+                    <div class="o_wholesaler_actions">
+                        <button type="button" class="btn btn-secondary" t-on-click="loadData">Refresh</button>
+                        <button type="button" class="btn btn-outline-secondary" t-on-click="openPaymentMapping">Payment Journals</button>
+                        <button type="button" class="btn btn-primary" t-on-click="openPivot">Open Pivot</button>
+                    </div>
+                </div>
+            </div>
+
+            <t t-if="state.loading">
+                <div class="o_wholesaler_loading">Loading wholesaler dashboard...</div>
+            </t>
+            <t t-else="">
+                <div class="o_wholesaler_cards">
+                    <div class="o_wh_card">
+                        <span>Product Sales (ex GST)</span>
+                        <strong>$<t t-esc="formatAmount(state.kpis.product_sales_ex_gst)"/></strong>
+                    </div>
+                    <div class="o_wh_card">
+                        <span>Shipping (ex GST)</span>
+                        <strong>$<t t-esc="formatAmount(state.kpis.shipping_ex_gst)"/></strong>
+                    </div>
+                    <div class="o_wh_card o_info">
+                        <span>GST Collected</span>
+                        <strong>$<t t-esc="formatAmount(state.kpis.gst_collected)"/></strong>
+                    </div>
+                    <div class="o_wh_card o_warn">
+                        <span>Refunds</span>
+                        <strong>$<t t-esc="formatAmount(state.kpis.refunds)"/></strong>
+                    </div>
+                    <div class="o_wh_card">
+                        <span>Fees / Commission</span>
+                        <strong>$<t t-esc="formatAmount(state.kpis.fees_commission)"/></strong>
+                    </div>
+                    <div class="o_wh_card o_good">
+                        <span>Net</span>
+                        <strong>$<t t-esc="formatAmount(state.kpis.net_amount)"/></strong>
+                    </div>
+                </div>
+
+                <div class="o_wholesaler_table_wrap">
+                    <h3>Channel / Payment Method Performance</h3>
+                    <table class="table table-sm table-hover">
+                        <thead>
+                            <tr>
+                                <th>Channel</th>
+                                <th class="text-end">Product Sales</th>
+                                <th class="text-end">Refunds</th>
+                                <th class="text-end">Net</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr t-foreach="state.channels" t-as="row" t-key="row.payment_method">
+                                <td><t t-esc="row.payment_method"/></td>
+                                <td class="text-end">$<t t-esc="formatAmount(row.product_sales_ex_gst)"/></td>
+                                <td class="text-end">$<t t-esc="formatAmount(row.refunds)"/></td>
+                                <td class="text-end">$<t t-esc="formatAmount(row.net_amount)"/></td>
+                            </tr>
+                            <tr t-if="!state.channels.length">
+                                <td colspan="4" class="text-center text-muted">No wholesaler report rows found for this time range.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </div>
+    </t>
+</templates>

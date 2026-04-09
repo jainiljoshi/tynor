@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_sale_order_tynor_custom_send" model="mail.template">
+        <field name="name">Tynor Sale Order: Custom Send</field>
+        <field name="model_id" ref="sale.model_sale_order"/>
+        <field name="subject">{{ object.company_id.name }} Order {{ object.name or '' }}</field>
+        <field name="email_from">{{ (object.user_id.email_formatted or object.company_id.email_formatted or user.email_formatted or '') }}</field>
+        <field name="partner_to">{{ object.partner_id.id }}</field>
+        <field name="use_default_to" eval="True"/>
+        <field name="email_layout_xmlid">tynor_sale_report_custom.mail_notification_light_tynor</field>
+        <field name="body_html" type="html">
+<div style="margin:0;padding:0;background:#f8fafc;font-family:Verdana,Arial,sans-serif;color:#1f2937;">
+    <div style="max-width:700px;margin:0 auto;background:#ffffff;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;">
+        <div style="background:#a10763;color:#ffffff;padding:16px 24px;font-size:18px;font-weight:700;">
+            <t t-out="object.state in ('draft', 'sent') and 'Quotation' or 'Sales Order'"/> <t t-out="object.name or ''"/>
+        </div>
+        <div style="padding:24px;">
+            <p style="margin:0 0 14px;font-size:14px;">Hello <t t-out="object.partner_id.name or ''"/>,</p>
+            <p style="margin:0 0 14px;font-size:13px;line-height:1.7;">
+                Please find your attached <strong><t t-out="object.state in ('draft', 'sent') and 'quotation' or 'sales order'"/></strong>.
+            </p>
+            <table style="width:100%;border-collapse:collapse;margin:0 0 14px;">
+                <tr>
+                    <td style="padding:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:12px;color:#475569;">Total</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;font-size:13px;"><strong t-out="format_amount(object.amount_total, object.currency_id)"/></td>
+                </tr>
+                <tr t-if="object.payment_term_id">
+                    <td style="padding:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:12px;color:#475569;">Payment Terms</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;font-size:13px;" t-out="object.payment_term_id.name"/>
+                </tr>
+                <tr t-if="object.tynor_external_order_no">
+                    <td style="padding:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:12px;color:#475569;">Order No</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;font-size:13px;" t-out="object.tynor_external_order_no"/>
+                </tr>
+                <tr t-if="object.tynor_external_payment_method">
+                    <td style="padding:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:12px;color:#475569;">Payment Method</td>
+                    <td style="padding:8px;border:1px solid #e2e8f0;font-size:13px;" t-out="object.tynor_external_payment_method"/>
+                </tr>
+            </table>
+            <p style="margin:0;font-size:13px;line-height:1.7;">
+                If you need any help, reply to this email and our team will assist you quickly.
+            </p>
+            <p style="margin:14px 0 0;font-size:13px;line-height:1.7;">
+                Regards,<br/>
+                <t t-out="object.user_id.name or object.company_id.name"/>
+            </p>
+        </div>
+    </div>
+</div>
+        </field>
+        <field name="report_template_ids" eval="[(6, 0, [ref('tynor_sale_report_custom.action_report_saleorder_tynor')])]"/>
+        <field name="auto_delete" eval="True"/>
+    </record>
+</odoo>
