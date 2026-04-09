@@ -223,21 +223,36 @@ class AccountMove(models.Model):
         self.ensure_one()
         if self.state != "posted" or self.move_type not in ("out_invoice", "out_receipt"):
             return False
-        if self.payment_state != "paid" or self.tynor_paid_email_sent or self.is_move_sent:
+        if self.payment_state != "paid" or self.tynor_paid_email_sent:
             return False
         if not self._tynor_is_shopify_related_invoice():
             return False
-        recipient_email = self.partner_id.email or self.commercial_partner_id.email
+        recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
         if not recipient_email:
             return False
-        template = self._get_mail_template()
+        template = self._get_mail_template() or self.env.ref("account.email_template_edi_invoice", raise_if_not_found=False)
         if not template:
             return False
         attachment = self._tynor_get_invoice_pdf_mail_attachment()
+        chatter_attachment = False
+        if attachment:
+            filename, content = attachment
+            chatter_attachment = self.env["ir.attachment"].sudo().create(
+                {
+                    "name": filename,
+                    "datas": content,
+                    "res_model": self._name,
+                    "res_id": self.id,
+                    "mimetype": "application/pdf",
+                    "type": "binary",
+                }
+            )
         email_values = {
             "email_to": recipient_email,
         }
-        if attachment:
+        if chatter_attachment:
+            email_values["attachment_ids"] = [(4, chatter_attachment.id)]
+        elif attachment:
             email_values["attachments"] = [attachment]
         mail_id = template.send_mail(self.id, force_send=True, email_values=email_values)
         if mail_id:
@@ -248,9 +263,10 @@ class AccountMove(models.Model):
                 }
             )
             self.message_post(
-                body=_("Invoice email auto-sent for paid Shopify order to <b>%s</b>.") % recipient_email,
+                body=_("Invoice email auto-sent for paid Shopify order to <b>%s</b>. PDF attached in chatter.") % recipient_email,
                 message_type="comment",
                 subtype_xmlid="mail.mt_note",
+                attachment_ids=[chatter_attachment.id] if chatter_attachment else [],
             )
         return bool(mail_id)
 

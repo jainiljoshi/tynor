@@ -52,6 +52,15 @@
                     margin-top: 10px;
                     margin-bottom: 12px;
                 }
+                .tynor-order-report .tynor-doc-heading,
+                .tynor-invoice-report .tynor-doc-heading {
+                    font-size: 18px;
+                    font-weight: 700;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                    color: #0f172a;
+                    margin: 0 0 6px 0;
+                }
                 .header .o_company_logo,
                 .header .o_company_logo_big,
                 .header .o_company_logo_mid {
@@ -95,6 +104,11 @@
                     object-fit: contain !important;
                 }
             </style>
+            <div class="row">
+                <div class="col-12 text-end">
+                    <div class="tynor-doc-heading">Sales Order</div>
+                </div>
+            </div>
             <div class="row tynor-head-meta">
                 <div class="col-8">
                     <div t-if="doc.name and doc.name != '/'">
@@ -201,7 +215,23 @@
                     max-width: 320px !important;
                     object-fit: contain !important;
                 }
+                .tynor-invoice-report .tynor-doc-heading {
+                    font-size: 18px;
+                    font-weight: 700;
+                    letter-spacing: 0.04em;
+                    text-transform: uppercase;
+                    color: #0f172a;
+                    margin: 0 0 6px 0;
+                }
             </style>
+            <div class="row">
+                <div class="col-12 text-end">
+                    <div class="tynor-doc-heading">
+                        <t t-if="o.move_type in ('out_invoice', 'out_receipt')">Tax Invoice</t>
+                        <t t-else="">Invoice</t>
+                    </div>
+                </div>
+            </div>
             <div class="row tynor-head-meta">
                 <div class="col-8">
                     <div t-if="o.name and o.name != '/'">
@@ -277,10 +307,10 @@
 
     <template id="external_layout_wave_tynor_spacing" inherit_id="web.external_layout_wave">
         <xpath expr="//div[hasclass('d-flex') and hasclass('justify-content-between')]" position="attributes">
-            <attribute name="style">padding-top: 42px !important;</attribute>
+            <attribute name="style">padding-top: 8px !important;</attribute>
         </xpath>
         <xpath expr="//div[hasclass('d-flex') and hasclass('justify-content-between')]//img[hasclass('o_company_logo')]" position="attributes">
-            <attribute name="style">margin-top: 100px !important;</attribute>
+            <attribute name="style">margin-top: 0 !important;</attribute>
         </xpath>
     </template>
 
