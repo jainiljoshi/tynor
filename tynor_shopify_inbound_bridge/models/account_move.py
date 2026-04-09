@@ -253,7 +253,19 @@ class AccountMove(models.Model):
             email_values["attachment_ids"] = [(4, chatter_attachment.id)]
         elif attachment:
             email_values["attachments"] = [attachment]
-        mail_id = template.send_mail(self.id, force_send=True, email_values=email_values)
+        try:
+            mail_id = template.send_mail(self.id, force_send=True, email_values=email_values)
+        except Exception:
+            _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
+            if chatter_attachment and not self.tynor_paid_chatter_posted:
+                try:
+                    self._tynor_post_paid_invoice_pdf_in_chatter(
+                        recipient_email=recipient_email,
+                        chatter_attachment=chatter_attachment,
+                    )
+                except Exception:
+                    _logger.exception("Failed to post fallback paid invoice PDF chatter note for invoice %s", self.id)
+            return False
         if mail_id:
             self.with_context(tynor_skip_bridge=True).write(
                 {
