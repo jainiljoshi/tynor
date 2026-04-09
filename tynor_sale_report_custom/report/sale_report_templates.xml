@@ -307,10 +307,11 @@
 
     <template id="external_layout_wave_tynor_spacing" inherit_id="web.external_layout_wave">
         <xpath expr="//div[hasclass('d-flex') and hasclass('justify-content-between')]" position="attributes">
-            <attribute name="style">padding-top: 8px !important;</attribute>
+            <attribute name="style">padding-top: 14px !important;</attribute>
         </xpath>
         <xpath expr="//div[hasclass('d-flex') and hasclass('justify-content-between')]//img[hasclass('o_company_logo')]" position="attributes">
-            <attribute name="style">margin-top: 0 !important;</attribute>
+            <attribute name="t-att-src">'/logo.png?company=%s' % company.id</attribute>
+            <attribute name="style">margin-top: 0 !important; background: transparent !important;</attribute>
         </xpath>
     </template>
 
