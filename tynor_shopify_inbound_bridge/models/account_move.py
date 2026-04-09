@@ -39,6 +39,7 @@ class AccountMove(models.Model):
     tynor_bridge_payment_synced = fields.Boolean(default=False, copy=False, readonly=True, index=True)
     tynor_paid_email_sent = fields.Boolean(default=False, copy=False, readonly=True, index=True)
     tynor_paid_email_sent_at = fields.Datetime(copy=False, readonly=True)
+    tynor_paid_chatter_posted = fields.Boolean(default=False, copy=False, readonly=True, index=True)
 
     @api.depends(
         "invoice_line_ids.display_type",
@@ -262,13 +263,52 @@ class AccountMove(models.Model):
                     "tynor_paid_email_sent_at": fields.Datetime.now(),
                 }
             )
-            self.message_post(
-                body=_("Invoice email auto-sent for paid Shopify order to <b>%s</b>. PDF attached in chatter.") % recipient_email,
-                message_type="comment",
-                subtype_xmlid="mail.mt_note",
-                attachment_ids=[chatter_attachment.id] if chatter_attachment else [],
+            self._tynor_post_paid_invoice_pdf_in_chatter(
+                recipient_email=recipient_email,
+                chatter_attachment=chatter_attachment,
             )
         return bool(mail_id)
+
+    def _tynor_post_paid_invoice_pdf_in_chatter(self, recipient_email=None, chatter_attachment=False):
+        self.ensure_one()
+        if self.tynor_paid_chatter_posted:
+            return False
+        if self.state != "posted" or self.move_type not in ("out_invoice", "out_receipt"):
+            return False
+        if self.payment_state != "paid":
+            return False
+
+        if not chatter_attachment:
+            attachment = self._tynor_get_invoice_pdf_mail_attachment()
+            if attachment:
+                filename, content = attachment
+                chatter_attachment = self.env["ir.attachment"].sudo().create(
+                    {
+                        "name": filename,
+                        "datas": content,
+                        "res_model": self._name,
+                        "res_id": self.id,
+                        "mimetype": "application/pdf",
+                        "type": "binary",
+                    }
+                )
+
+        if not chatter_attachment:
+            return False
+
+        recipient = recipient_email or (self.partner_id.email or self.commercial_partner_id.email or "").strip()
+        body = _("Invoice PDF attached in chatter for paid Shopify order.")
+        if recipient:
+            body = _("Invoice email auto-sent for paid Shopify order to <b>%s</b>. PDF attached in chatter.") % recipient
+
+        self.message_post(
+            body=body,
+            message_type="comment",
+            subtype_xmlid="mail.mt_note",
+            attachment_ids=[chatter_attachment.id],
+        )
+        self.with_context(tynor_skip_bridge=True).write({"tynor_paid_chatter_posted": True})
+        return True
 
     def _tynor_get_invoice_pdf_mail_attachment(self):
         """Return invoice PDF as a mail.template-style attachment tuple."""
@@ -310,7 +350,10 @@ class AccountMove(models.Model):
 
                 if move.payment_state == "paid":
                     if not self.env.context.get("tynor_disable_paid_email"):
-                        move._tynor_send_paid_invoice_email()
+                        if not move.tynor_paid_email_sent:
+                            move._tynor_send_paid_invoice_email()
+                    if move.tynor_paid_email_sent and not move.tynor_paid_chatter_posted:
+                        move._tynor_post_paid_invoice_pdf_in_chatter()
 
                 if move._tynor_get_existing_bridge_payment() or move.payment_state == "paid":
                     move.with_context(tynor_skip_bridge=True).write({"tynor_bridge_payment_synced": True})
@@ -333,8 +376,10 @@ class AccountMove(models.Model):
                 ("state", "=", "posted"),
                 ("move_type", "in", ("out_invoice", "out_receipt")),
                 "|",
+                "|",
                 ("tynor_bridge_payment_synced", "=", False),
                 ("tynor_paid_email_sent", "=", False),
+                ("tynor_paid_chatter_posted", "=", False),
             ],
             order="id asc",
             limit=limit,
