@@ -4,5 +4,5 @@ from . import account_move_line
 from . import sale_order
 from . import payment_journal_map
 from . import account_payment
+from . import account_move_send
 from . import account_move
-

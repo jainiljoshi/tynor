@@ -10,6 +10,7 @@
         "security/ir.model.access.csv",
         "data/payment_method_map_data.xml",
         "data/cron.xml",
+        "data/mail_layout.xml",
         "views/sale_order_views.xml",
         "views/account_move_views.xml",
         "views/payment_method_map_views.xml",
@@ -17,4 +18,3 @@
     "installable": True,
     "application": False,
 }
-
