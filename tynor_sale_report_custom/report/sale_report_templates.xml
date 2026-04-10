@@ -254,8 +254,8 @@
         </xpath>
 
         <xpath expr="//t[@t-set='address']" position="replace">
-            <t t-set="tynor_bill_partner" t-value="o.partner_invoice_id or o.partner_id"/>
-            <t t-set="tynor_ship_partner" t-value="o.partner_shipping_id or tynor_bill_partner"/>
+            <t t-set="tynor_bill_partner" t-value="o.partner_id"/>
+            <t t-set="tynor_ship_partner" t-value="('partner_shipping_id' in o._fields and o.partner_shipping_id) or tynor_bill_partner"/>
             <t t-set="address">
                 <div class="address row mb-4">
                     <div class="col-6">
