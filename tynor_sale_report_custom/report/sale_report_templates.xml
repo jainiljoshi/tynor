@@ -463,6 +463,6 @@
     </p>
 </div>
         </field>
-        <field name="report_template_ids" eval="[(6, 0, [ref('tynor_sale_report_custom.action_report_invoice_tynor')])]"/>
+        <field name="report_template_ids" eval="[(6, 0, [ref('account.account_invoices')])]"/>
     </record>
 </odoo>

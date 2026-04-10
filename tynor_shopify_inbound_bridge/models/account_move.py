@@ -51,7 +51,7 @@ class AccountMove(models.Model):
         "tynor_sale_report_custom.mail_template_account_move_tynor",
     )
     _TYNOR_INVOICE_REPORT_XMLIDS = (
-        "tynor_sale_report_custom.action_report_invoice_tynor",
+        "account.account_invoices",
     )
 
     @api.depends(
@@ -328,28 +328,25 @@ class AccountMove(models.Model):
         return False
 
     def _tynor_get_invoice_report_action(self):
-        """Return the Tynor invoice report action.
+        """Return the invoice report action used for send/auto-send.
 
-        Uses the canonical XML ID first; falls back to a dynamic lookup
-        only if the record is missing (e.g. module not yet upgraded).
+        Uses canonical XML IDs first; falls back to a dynamic lookup
+        only if records are missing.
         """
         self.ensure_one()
-        # Canonical report action defined in tynor_sale_report_custom
-        report = self.env.ref(
-            "tynor_sale_report_custom.action_report_invoice_tynor",
-            raise_if_not_found=False,
-        )
-        if report and report.model == self._name:
-            return report
+        for xmlid in self._TYNOR_INVOICE_REPORT_XMLIDS:
+            report = self.env.ref(xmlid, raise_if_not_found=False)
+            if report and report.model == self._name:
+                return report
 
-        # Fallback: scan ir.model.data for any Tynor invoice report
+        # Fallback: scan for standard invoice report actions.
         model_data = self.env["ir.model.data"].sudo().search(
             [
                 ("model", "=", "ir.actions.report"),
-                ("module", "=", "tynor_sale_report_custom"),
+                ("module", "in", ("account", "tynor_sale_report_custom")),
                 "|",
                 ("name", "ilike", "invoice"),
-                ("name", "ilike", "tynor"),
+                ("name", "ilike", "account_invoices"),
             ],
             order="id asc",
         )
@@ -365,28 +362,24 @@ class AccountMove(models.Model):
     def _tynor_get_invoice_pdf_mail_attachment(self):
         """Return invoice PDF as a mail.template-style attachment tuple.
 
-        Always uses the Tynor custom invoice report
-        (tynor_sale_report_custom.action_report_invoice_tynor) so the
-        correct branded template with logo/header is rendered.  The PDF
-        bytes are generated manually via _render_qweb_pdf([self.id]).
+        Uses the standard invoice report action (account.account_invoices)
+        so send flows and generated PDFs stay aligned with the base invoice
+        report pipeline. PDF bytes are generated via _render_qweb_pdf([self.id]).
         """
         self.ensure_one()
-        report = self.env.ref(
-            "tynor_sale_report_custom.action_report_invoice_tynor",
-            raise_if_not_found=False,
-        )
+        report = self.env.ref("account.account_invoices", raise_if_not_found=False)
         if not report:
             _logger.warning(
-                "Tynor invoice report action (action_report_invoice_tynor) not found for invoice %s — "
+                "Base invoice report action (account.account_invoices) not found for invoice %s — "
                 "falling back to dynamic lookup.",
                 self.id,
             )
             report = self._tynor_get_invoice_report_action()
         if not report:
-            _logger.warning("No Tynor invoice report action found for invoice %s", self.id)
+            _logger.warning("No invoice report action found for invoice %s", self.id)
             return False
 
-        # Generate PDF bytes manually — do NOT delegate to account.account_invoices.
+        # Generate PDF bytes directly from the selected report action.
         pdf_content, _content_type = report._render_qweb_pdf(report.report_name, [self.id])
         if not pdf_content:
             return False
