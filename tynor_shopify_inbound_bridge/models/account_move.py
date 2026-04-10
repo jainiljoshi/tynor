@@ -239,75 +239,40 @@ class AccountMove(models.Model):
             return False
         if self.payment_state != "paid":
             return False
-        # PERF: SKIP LOCKED lets concurrent workers skip rows already being processed
-        # instead of blocking. This prevents double-send when multiple cron workers
-        # or write() triggers race on the same invoice.
-        self.env.cr.execute(
-            """
-            SELECT state, move_type, payment_state, tynor_paid_email_sent
-              FROM account_move
-             WHERE id = %s
-             FOR UPDATE SKIP LOCKED
-            """,
-            (self.id,),
-        )
-        locked_row = self.env.cr.fetchone()
-        if not locked_row:
-            # Row is locked by another worker — skip silently.
-            return False
-        locked_state, locked_move_type, locked_payment_state, locked_sent = locked_row
-        if locked_state != "posted" or locked_move_type not in ("out_invoice", "out_receipt"):
-            return False
-        if locked_payment_state != "paid" or locked_sent:
+        if self.tynor_paid_email_sent:
             return False
 
-        # Mark as processing/sent before triggering native send flow so any
-        # nested write() calls from that flow cannot re-enter and send again.
-        self.env.cr.execute(
-            """
-            UPDATE account_move
-               SET tynor_paid_email_sent = TRUE,
-                   tynor_paid_email_sent_at = (NOW() AT TIME ZONE 'UTC')
-             WHERE id = %s
-            """,
-            (self.id,),
+        # Set sent-flag first so nested writes from send flow won't re-enter.
+        self.with_context(tynor_skip_bridge=True).write(
+            {
+                "tynor_paid_email_sent": True,
+                "tynor_paid_email_sent_at": fields.Datetime.now(),
+            }
         )
-        self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
 
-        # Use Odoo native invoice send engine (same backend flow as the "Send"
-        # action), only forcing the email sending method.
+        # Use native invoice send flow (same as Send button backend).
+        move_for_send = self.with_context(tynor_skip_bridge=True)
         try:
-            move_for_send = self.with_context(tynor_skip_bridge=True)
-            move_for_send.env["account.move.send"]._generate_and_send_invoices(
-                move_for_send,
+            move_for_send._generate_and_send(
                 allow_fallback_pdf=True,
                 sending_methods=["email"],
             )
         except Exception:
             # Roll back sent-flag on failure so cron/write can retry later.
-            self.env.cr.execute(
-                """
-                UPDATE account_move
-                   SET tynor_paid_email_sent = FALSE,
-                       tynor_paid_email_sent_at = NULL
-                 WHERE id = %s
-                """,
-                (self.id,),
+            self.with_context(tynor_skip_bridge=True).write(
+                {
+                    "tynor_paid_email_sent": False,
+                    "tynor_paid_email_sent_at": False,
+                }
             )
-            self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
             _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
             return False
 
-        # Mark success metadata after native send flow completed.
-        self.env.cr.execute(
-            """
-            UPDATE account_move
-               SET tynor_paid_chatter_posted = TRUE
-             WHERE id = %s
-            """,
-            (self.id,),
+        self.with_context(tynor_skip_bridge=True).write(
+            {
+                "tynor_paid_chatter_posted": True,
+            }
         )
-        self.invalidate_recordset(["tynor_paid_chatter_posted"])
         return True
 
     def _tynor_post_paid_chatter_note(self, recipient_email=None):
