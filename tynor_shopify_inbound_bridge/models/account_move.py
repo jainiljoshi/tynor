@@ -222,6 +222,8 @@ class AccountMove(models.Model):
 
     def _tynor_send_paid_invoice_email(self):
         self.ensure_one()
+        if self.tynor_paid_chatter_posted:
+            return False
         if self.state != "posted" or self.move_type not in ("out_invoice", "out_receipt"):
             return False
         if self.payment_state != "paid" or self.tynor_paid_email_sent:
@@ -267,7 +269,7 @@ class AccountMove(models.Model):
                     _logger.exception("Failed to post fallback paid invoice PDF chatter note for invoice %s", self.id)
             return False
         if mail_id:
-            self.with_context(tynor_skip_bridge=True).write(
+            self.sudo().with_context(tynor_skip_bridge=True).write(
                 {
                     "tynor_paid_email_sent": True,
                     "tynor_paid_email_sent_at": fields.Datetime.now(),
@@ -317,7 +319,14 @@ class AccountMove(models.Model):
             subtype_xmlid="mail.mt_note",
             attachment_ids=[chatter_attachment.id],
         )
-        self.with_context(tynor_skip_bridge=True).write({"tynor_paid_chatter_posted": True})
+        # Keep this idempotent even if downstream flows retry this method.
+        self.sudo().with_context(tynor_skip_bridge=True).write(
+            {
+                "tynor_paid_chatter_posted": True,
+                "tynor_paid_email_sent": True,
+                "tynor_paid_email_sent_at": self.tynor_paid_email_sent_at or fields.Datetime.now(),
+            }
+        )
         return True
 
     def _tynor_get_invoice_pdf_mail_attachment(self):
