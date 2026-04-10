@@ -50,8 +50,6 @@ class AccountMove(models.Model):
     )
     _TYNOR_INVOICE_REPORT_XMLIDS = (
         "tynor_sale_report_custom.action_report_invoice_tynor",
-        "tynor_sale_report_custom.action_report_account_move_tynor",
-        "tynor_sale_report_custom.action_report_account_invoice_tynor",
     )
 
     @api.depends(
@@ -239,24 +237,40 @@ class AccountMove(models.Model):
             return False
         if self.payment_state != "paid":
             return False
-        # Serialize auto-send at DB row level so concurrent workers cannot send the same invoice twice.
+        # PERF: SKIP LOCKED lets concurrent workers skip rows already being processed
+        # instead of blocking. This prevents double-send when multiple cron workers
+        # or write() triggers race on the same invoice.
         self.env.cr.execute(
             """
             SELECT state, move_type, payment_state, tynor_paid_email_sent
               FROM account_move
              WHERE id = %s
-             FOR UPDATE
+             FOR UPDATE SKIP LOCKED
             """,
             (self.id,),
         )
         locked_row = self.env.cr.fetchone()
         if not locked_row:
+            # Row is locked by another worker — skip silently.
             return False
         locked_state, locked_move_type, locked_payment_state, locked_sent = locked_row
         if locked_state != "posted" or locked_move_type not in ("out_invoice", "out_receipt"):
             return False
         if locked_payment_state != "paid" or locked_sent:
             return False
+        # Mark as sent and commit BEFORE the actual mail send.
+        # This ensures that even if the mail send is slow or the process crashes
+        # after sending, no other worker will attempt a duplicate send.
+        self.env.cr.execute(
+            """
+            UPDATE account_move
+               SET tynor_paid_email_sent = TRUE,
+                   tynor_paid_email_sent_at = (NOW() AT TIME ZONE 'UTC')
+             WHERE id = %s
+            """,
+            (self.id,),
+        )
+        self.env.cr.commit()
         self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
         recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
         if not recipient_email:
@@ -273,13 +287,6 @@ class AccountMove(models.Model):
         except Exception:
             _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
             return False
-        if mail_id:
-            self.sudo().with_context(tynor_skip_bridge=True).write(
-                {
-                    "tynor_paid_email_sent": True,
-                    "tynor_paid_email_sent_at": fields.Datetime.now(),
-                }
-            )
         return bool(mail_id)
 
     def _tynor_get_paid_invoice_email_template(self):
@@ -307,12 +314,21 @@ class AccountMove(models.Model):
         return False
 
     def _tynor_get_invoice_report_action(self):
-        self.ensure_one()
-        for xmlid in self._TYNOR_INVOICE_REPORT_XMLIDS:
-            report = self.env.ref(xmlid, raise_if_not_found=False)
-            if report and report.model == self._name:
-                return report
+        """Return the Tynor invoice report action.
 
+        Uses the canonical XML ID first; falls back to a dynamic lookup
+        only if the record is missing (e.g. module not yet upgraded).
+        """
+        self.ensure_one()
+        # Canonical report action defined in tynor_sale_report_custom
+        report = self.env.ref(
+            "tynor_sale_report_custom.action_report_invoice_tynor",
+            raise_if_not_found=False,
+        )
+        if report and report.model == self._name:
+            return report
+
+        # Fallback: scan ir.model.data for any Tynor invoice report
         model_data = self.env["ir.model.data"].sudo().search(
             [
                 ("model", "=", "ir.actions.report"),
@@ -333,19 +349,36 @@ class AccountMove(models.Model):
         return False
 
     def _tynor_get_invoice_pdf_mail_attachment(self):
-        """Return invoice PDF as a mail.template-style attachment tuple."""
+        """Return invoice PDF as a mail.template-style attachment tuple.
+
+        Always uses the Tynor custom invoice report
+        (tynor_sale_report_custom.action_report_invoice_tynor) so the
+        correct branded template with logo/header is rendered.  The PDF
+        bytes are generated manually via _render_qweb_pdf([self.id]).
+        """
         self.ensure_one()
-        report = self._tynor_get_invoice_report_action()
+        report = self.env.ref(
+            "tynor_sale_report_custom.action_report_invoice_tynor",
+            raise_if_not_found=False,
+        )
+        if not report:
+            _logger.warning(
+                "Tynor invoice report action (action_report_invoice_tynor) not found for invoice %s — "
+                "falling back to dynamic lookup.",
+                self.id,
+            )
+            report = self._tynor_get_invoice_report_action()
         if not report:
             _logger.warning("No Tynor invoice report action found for invoice %s", self.id)
             return False
 
-        pdf_content, report_type = report._render_qweb_pdf(report.report_name, self.ids)
+        # Generate PDF bytes manually — do NOT delegate to account.account_invoices.
+        pdf_content, _content_type = report._render_qweb_pdf(report.report_name, [self.id])
         if not pdf_content:
             return False
-        extension = report_type or "pdf"
+        filename = self._get_invoice_report_filename(extension="pdf", report=report)
         return (
-            self._get_invoice_report_filename(extension=extension, report=report),
+            filename,
             base64.b64encode(pdf_content),
         )
 
