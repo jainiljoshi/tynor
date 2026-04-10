@@ -1,6 +1,6 @@
 from odoo import api, fields, models
 
-from .utils import extract_external_values, normalize_payment_display
+from .utils import clean_external_value, extract_external_values, normalize_payment_display
 
 
 class SaleOrder(models.Model):
@@ -49,12 +49,13 @@ class SaleOrder(models.Model):
         )
         updates = []
         for order_id, raw_method, current_method in self.env.cr.fetchall():
-            normalized = normalize_payment_display(raw_method)
-            if normalized and normalized != (current_method or ""):
-                updates.append((normalized, order_id))
+            cleaned_raw = clean_external_value(raw_method)
+            normalized = normalize_payment_display(cleaned_raw)
+            if cleaned_raw != (raw_method or "") or normalized != (current_method or ""):
+                updates.append((cleaned_raw or None, normalized or None, order_id))
         if updates:
             self.env.cr.executemany(
-                "UPDATE sale_order SET tynor_external_payment_method = %s WHERE id = %s",
+                "UPDATE sale_order SET tynor_external_payment_method_raw = %s, tynor_external_payment_method = %s WHERE id = %s",
                 updates,
             )
         return len(updates)

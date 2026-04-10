@@ -27,25 +27,57 @@ PAYMENT_ALIASES = {
     "my deal": "mydeal",
 }
 
+_EMPTY_MARKERS = {
+    "",
+    '""',
+    "''",
+    '"',
+    "'",
+    "-",
+    "--",
+    "none",
+    "null",
+    "nil",
+    "n/a",
+    "na",
+    "[]",
+    "{}",
+    "()",
+}
 
-def strip_shopify_label(text):
-    value = (text or "").strip()
+
+def clean_external_value(raw_value):
+    value = (raw_value or "").strip()
     if not value:
         return ""
-    value = re.sub(r"^\s*shopify\s+", "", value, flags=re.IGNORECASE)
     value = re.sub(r"\s+", " ", value).strip()
+    while len(value) >= 2 and ((value[0] == value[-1] == '"') or (value[0] == value[-1] == "'")):
+        value = value[1:-1].strip()
+    if value.lower() in _EMPTY_MARKERS:
+        return ""
     return value
 
 
+def strip_shopify_label(text):
+    value = clean_external_value(text)
+    if not value:
+        return ""
+    value = re.sub(r"^\s*shopify\s+", "", value, flags=re.IGNORECASE)
+    return clean_external_value(value)
+
+
 def normalize_payment_key(raw_value):
-    value = (raw_value or "").strip()
+    value = clean_external_value(raw_value)
     if not value:
         return ""
     value = strip_shopify_label(value)
     value = re.sub(r"^\s*payment\s*method\s*[:#-]?\s*", "", value, flags=re.IGNORECASE).strip()
+    value = clean_external_value(value)
     if not value:
         return ""
-    first_value = re.split(r"[,;/|]+", value)[0].strip().lower()
+    first_value = clean_external_value(re.split(r"[,;/|]+", value)[0]).lower()
+    if not first_value:
+        return ""
     first_value = re.sub(r"\s+", " ", first_value)
     return PAYMENT_ALIASES.get(first_value, re.sub(r"[^a-z0-9]+", "_", first_value).strip("_"))
 
@@ -70,20 +102,20 @@ def extract_external_values(lines):
     order_no = ""
     payment_raw = ""
     for line in lines or []:
-        text = (line or "").strip()
+        text = clean_external_value(line)
         if not text:
             continue
         if not order_no:
             for pattern in ORDER_PATTERNS:
                 match = pattern.search(text)
                 if match:
-                    order_no = (match.group(1) or "").strip()
+                    order_no = clean_external_value(match.group(1))
                     break
         if not payment_raw:
             for pattern in PAYMENT_PATTERNS:
                 match = pattern.search(text)
                 if match:
-                    payment_raw = (match.group(1) or "").strip()
+                    payment_raw = clean_external_value(match.group(1))
                     break
     return {
         "order_no": order_no,

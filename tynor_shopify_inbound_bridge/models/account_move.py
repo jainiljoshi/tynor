@@ -6,7 +6,7 @@ from markupsafe import Markup
 
 from odoo import api, fields, models
 
-from .utils import extract_external_values, normalize_payment_display
+from .utils import clean_external_value, extract_external_values, normalize_payment_display
 
 _logger = logging.getLogger(__name__)
 
@@ -81,15 +81,15 @@ class AccountMove(models.Model):
 
     def _tynor_resolve_external_values(self):
         self.ensure_one()
-        order_no = self.tynor_external_order_no or ""
-        payment_method_raw = self.tynor_external_payment_method_raw or ""
-        payment_method = self.tynor_external_payment_method or ""
+        order_no = clean_external_value(self.tynor_external_order_no)
+        payment_method_raw = clean_external_value(self.tynor_external_payment_method_raw)
+        payment_method = clean_external_value(self.tynor_external_payment_method)
 
         orders = self._tynor_get_related_sale_orders()
         for order in orders:
-            order_no = order_no or order.tynor_external_order_no or ""
-            payment_method_raw = payment_method_raw or order.tynor_external_payment_method_raw or ""
-            payment_method = payment_method or order.tynor_external_payment_method or ""
+            order_no = order_no or clean_external_value(order.tynor_external_order_no)
+            payment_method_raw = payment_method_raw or clean_external_value(order.tynor_external_payment_method_raw)
+            payment_method = payment_method or clean_external_value(order.tynor_external_payment_method)
             if order_no and payment_method and payment_method_raw:
                 break
 
@@ -105,9 +105,9 @@ class AccountMove(models.Model):
             payment_method = normalized_from_raw
 
         return {
-            "order_no": order_no,
-            "payment_method_raw": payment_method_raw,
-            "payment_method": payment_method,
+            "order_no": clean_external_value(order_no),
+            "payment_method_raw": clean_external_value(payment_method_raw),
+            "payment_method": clean_external_value(payment_method),
         }
 
     @api.model
@@ -125,12 +125,13 @@ class AccountMove(models.Model):
         )
         updates = []
         for move_id, raw_method, current_method in self.env.cr.fetchall():
-            normalized = normalize_payment_display(raw_method)
-            if normalized and normalized != (current_method or ""):
-                updates.append((normalized, move_id))
+            cleaned_raw = clean_external_value(raw_method)
+            normalized = normalize_payment_display(cleaned_raw)
+            if cleaned_raw != (raw_method or "") or normalized != (current_method or ""):
+                updates.append((cleaned_raw or None, normalized or None, move_id))
         if updates:
             self.env.cr.executemany(
-                "UPDATE account_move SET tynor_external_payment_method = %s WHERE id = %s",
+                "UPDATE account_move SET tynor_external_payment_method_raw = %s, tynor_external_payment_method = %s WHERE id = %s",
                 updates,
             )
         return len(updates)
@@ -402,12 +403,12 @@ class AccountMove(models.Model):
             try:
                 values = move._tynor_resolve_external_values()
                 updates = {}
-                if values["order_no"] and values["order_no"] != move.tynor_external_order_no:
-                    updates["tynor_external_order_no"] = values["order_no"]
-                if values["payment_method_raw"] and values["payment_method_raw"] != move.tynor_external_payment_method_raw:
-                    updates["tynor_external_payment_method_raw"] = values["payment_method_raw"]
-                if values["payment_method"] and values["payment_method"] != move.tynor_external_payment_method:
-                    updates["tynor_external_payment_method"] = values["payment_method"]
+                if values["order_no"] != (move.tynor_external_order_no or ""):
+                    updates["tynor_external_order_no"] = values["order_no"] or False
+                if values["payment_method_raw"] != (move.tynor_external_payment_method_raw or ""):
+                    updates["tynor_external_payment_method_raw"] = values["payment_method_raw"] or False
+                if values["payment_method"] != (move.tynor_external_payment_method or ""):
+                    updates["tynor_external_payment_method"] = values["payment_method"] or False
                 if updates:
                     move.with_context(tynor_skip_bridge=True).write(updates)
 
