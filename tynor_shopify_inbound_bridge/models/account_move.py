@@ -260,9 +260,13 @@ class AccountMove(models.Model):
             return False
         if locked_payment_state != "paid" or locked_sent:
             return False
-        # Mark as sent and commit BEFORE the actual mail send.
-        # This ensures that even if the mail send is slow or the process crashes
-        # after sending, no other worker will attempt a duplicate send.
+        # Mark as sent within the same transaction (no cr.commit!).
+        # The FOR UPDATE SKIP LOCKED above already holds the row lock,
+        # preventing any concurrent worker from entering this path.
+        # The flag is written now so that even if this method is somehow
+        # called again within the same request, the locked_sent check above
+        # will catch it.  The actual DB commit happens at the end of the
+        # HTTP request / cron cycle, which is the normal Odoo pattern.
         self.env.cr.execute(
             """
             UPDATE account_move
@@ -272,7 +276,6 @@ class AccountMove(models.Model):
             """,
             (self.id,),
         )
-        self.env.cr.commit()
         self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
         recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
         if not recipient_email:
@@ -433,12 +436,11 @@ class AccountMove(models.Model):
                     move._tynor_create_payment_from_bridge()
 
                 if move.payment_state == "paid":
-                    if not self.env.context.get("tynor_disable_paid_email"):
-                        if not move.tynor_paid_email_sent:
-                            move._tynor_send_paid_invoice_email()
-                        elif not move.tynor_paid_chatter_posted:
-                            # Email was sent but chatter note failed — retry.
-                            move._tynor_post_paid_chatter_note()
+                    if not move.tynor_paid_email_sent:
+                        move._tynor_send_paid_invoice_email()
+                    elif not move.tynor_paid_chatter_posted:
+                        # Email was sent but chatter note failed — retry.
+                        move._tynor_post_paid_chatter_note()
 
                 if move._tynor_get_existing_bridge_payment() or move.payment_state == "paid":
                     move.with_context(tynor_skip_bridge=True).write({"tynor_bridge_payment_synced": True})
