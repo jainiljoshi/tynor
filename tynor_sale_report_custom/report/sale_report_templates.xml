@@ -348,8 +348,6 @@
 
     <template id="mail_notification_layout_tynor" inherit_id="mail.mail_notification_layout" primary="True">
         <xpath expr="//div[a[contains(@href, 'odoo.com')]]" position="replace"/>
-        <xpath expr="//tr[td/a[contains(@href, 'odoo.com')]]" position="replace"/>
-        <xpath expr="//tr[td[contains(normalize-space(.), 'Powered by')]]" position="replace"/>
     </template>
 
     <template id="mail_notification_light_tynor" inherit_id="mail.mail_notification_light" primary="True">
