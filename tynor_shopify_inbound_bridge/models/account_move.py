@@ -261,30 +261,53 @@ class AccountMove(models.Model):
         if locked_payment_state != "paid" or locked_sent:
             return False
 
-        # Use Odoo native invoice send engine (same backend flow as the "Send"
-        # action), only forcing the email sending method.
-        try:
-            self.env["account.move.send"]._generate_and_send_invoices(
-                self,
-                allow_fallback_pdf=True,
-                sending_methods=["email"],
-            )
-        except Exception:
-            _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
-            return False
-
-        # Mark success after native send flow completed.
+        # Mark as processing/sent before triggering native send flow so any
+        # nested write() calls from that flow cannot re-enter and send again.
         self.env.cr.execute(
             """
             UPDATE account_move
                SET tynor_paid_email_sent = TRUE,
-                   tynor_paid_email_sent_at = (NOW() AT TIME ZONE 'UTC'),
-                   tynor_paid_chatter_posted = TRUE
+                   tynor_paid_email_sent_at = (NOW() AT TIME ZONE 'UTC')
              WHERE id = %s
             """,
             (self.id,),
         )
-        self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at", "tynor_paid_chatter_posted"])
+        self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
+
+        # Use Odoo native invoice send engine (same backend flow as the "Send"
+        # action), only forcing the email sending method.
+        try:
+            move_for_send = self.with_context(tynor_skip_bridge=True)
+            move_for_send.env["account.move.send"]._generate_and_send_invoices(
+                move_for_send,
+                allow_fallback_pdf=True,
+                sending_methods=["email"],
+            )
+        except Exception:
+            # Roll back sent-flag on failure so cron/write can retry later.
+            self.env.cr.execute(
+                """
+                UPDATE account_move
+                   SET tynor_paid_email_sent = FALSE,
+                       tynor_paid_email_sent_at = NULL
+                 WHERE id = %s
+                """,
+                (self.id,),
+            )
+            self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
+            _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
+            return False
+
+        # Mark success metadata after native send flow completed.
+        self.env.cr.execute(
+            """
+            UPDATE account_move
+               SET tynor_paid_chatter_posted = TRUE
+             WHERE id = %s
+            """,
+            (self.id,),
+        )
+        self.invalidate_recordset(["tynor_paid_chatter_posted"])
         return True
 
     def _tynor_post_paid_chatter_note(self, recipient_email=None):
