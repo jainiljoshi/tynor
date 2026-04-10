@@ -2,6 +2,8 @@ import logging
 import re
 import base64
 
+from markupsafe import Markup
+
 from odoo import api, fields, models
 
 from .utils import extract_external_values, normalize_payment_display
@@ -287,7 +289,36 @@ class AccountMove(models.Model):
         except Exception:
             _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
             return False
+        if mail_id:
+            self._tynor_post_paid_chatter_note(recipient_email)
         return bool(mail_id)
+
+    def _tynor_post_paid_chatter_note(self, recipient_email=None):
+        """Post an internal chatter note confirming the paid-invoice email was sent."""
+        self.ensure_one()
+        if not recipient_email:
+            recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
+        try:
+            body = Markup(
+                "✅ <b>Paid invoice email auto-sent</b> to <code>%s</code> "
+                "for invoice <b>%s</b> (Total: %s)."
+            ) % (
+                recipient_email or "(unknown)",
+                self.name or "",
+                self.currency_id.symbol + " " + str(self.amount_total) if self.currency_id else str(self.amount_total),
+            )
+            self.sudo().message_post(
+                body=body,
+                message_type="notification",
+                subtype_xmlid="mail.mt_note",
+            )
+            self.sudo().with_context(tynor_skip_bridge=True).write(
+                {"tynor_paid_chatter_posted": True}
+            )
+        except Exception:
+            _logger.exception(
+                "Failed to post chatter confirmation for invoice %s", self.id
+            )
 
     def _tynor_get_paid_invoice_email_template(self):
         self.ensure_one()
@@ -405,6 +436,9 @@ class AccountMove(models.Model):
                     if not self.env.context.get("tynor_disable_paid_email"):
                         if not move.tynor_paid_email_sent:
                             move._tynor_send_paid_invoice_email()
+                        elif not move.tynor_paid_chatter_posted:
+                            # Email was sent but chatter note failed — retry.
+                            move._tynor_post_paid_chatter_note()
 
                 if move._tynor_get_existing_bridge_payment() or move.payment_state == "paid":
                     move.with_context(tynor_skip_bridge=True).write({"tynor_bridge_payment_synced": True})
