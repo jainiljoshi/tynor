@@ -197,7 +197,7 @@
         </xpath>
     </template>
 
-    <template id="report_invoice_document_tynor" inherit_id="account.report_invoice_document" primary="True">
+    <template id="report_invoice_document_tynor" inherit_id="account.report_invoice_document">
         <xpath expr="//div[hasclass('page')]" position="attributes">
             <attribute name="class">page tynor-invoice-report</attribute>
         </xpath>
