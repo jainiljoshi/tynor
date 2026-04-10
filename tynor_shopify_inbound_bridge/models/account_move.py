@@ -237,8 +237,27 @@ class AccountMove(models.Model):
         self.ensure_one()
         if self.state != "posted" or self.move_type not in ("out_invoice", "out_receipt"):
             return False
-        if self.payment_state != "paid" or self.tynor_paid_email_sent:
+        if self.payment_state != "paid":
             return False
+        # Serialize auto-send at DB row level so concurrent workers cannot send the same invoice twice.
+        self.env.cr.execute(
+            """
+            SELECT state, move_type, payment_state, tynor_paid_email_sent
+              FROM account_move
+             WHERE id = %s
+             FOR UPDATE
+            """,
+            (self.id,),
+        )
+        locked_row = self.env.cr.fetchone()
+        if not locked_row:
+            return False
+        locked_state, locked_move_type, locked_payment_state, locked_sent = locked_row
+        if locked_state != "posted" or locked_move_type not in ("out_invoice", "out_receipt"):
+            return False
+        if locked_payment_state != "paid" or locked_sent:
+            return False
+        self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
         recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
         if not recipient_email:
             return False
@@ -246,26 +265,9 @@ class AccountMove(models.Model):
         if not template:
             _logger.warning("No Tynor paid-invoice mail template found for invoice %s", self.id)
             return False
-        attachment = self._tynor_get_invoice_pdf_mail_attachment()
-        attachment_id = False
-        if attachment:
-            filename, content = attachment
-            attachment_id = self.env["ir.attachment"].sudo().create(
-                {
-                    "name": filename,
-                    "datas": content,
-                    "res_model": self._name,
-                    "res_id": self.id,
-                    "mimetype": "application/pdf",
-                    "type": "binary",
-                }
-            )
         email_values = {
             "email_to": recipient_email,
         }
-        if attachment_id:
-            # Override template-generated attachments to ensure the sent PDF is the Tynor invoice report.
-            email_values["attachment_ids"] = [(6, 0, [attachment_id.id])]
         try:
             mail_id = template.send_mail(self.id, force_send=True, email_values=email_values)
         except Exception:
