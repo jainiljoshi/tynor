@@ -421,4 +421,43 @@
         </field>
         <field name="report_template_ids" eval="[(6, 0, [ref('account.account_invoices')])]"/>
     </record>
+
+    <record id="action_report_invoice_tynor" model="ir.actions.report">
+        <field name="name">Tynor Invoice</field>
+        <field name="model">account.move</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">account.report_invoice_with_payments</field>
+        <field name="report_file">account.report_invoice_with_payments</field>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="binding_type">report</field>
+        <field name="print_report_name">(object._get_report_base_filename())</field>
+    </record>
+
+    <record id="mail_template_invoice_paid_tynor" model="mail.template">
+        <field name="name">Tynor Invoice: Paid Auto Send</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="subject">{{ object.company_id.name }} Paid Invoice {{ object.name or 'n/a' }}</field>
+        <field name="email_from">{{ (object.user_id.email_formatted or object.company_id.email_formatted or user.email_formatted or '') }}</field>
+        <field name="partner_to">{{ object.partner_id.id }}</field>
+        <field name="use_default_to" eval="True"/>
+        <field name="email_layout_xmlid">tynor_sale_report_custom.mail_notification_light_tynor</field>
+        <field name="body_html" type="html">
+<div style="margin:0;padding:0;font-family:Verdana,Arial,sans-serif;color:#1f2937;">
+    <p style="margin:0 0 14px;font-size:14px;">
+        Hello <t t-out="object.partner_id.name or ''"/>,
+    </p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.7;">
+        Your payment has been received for invoice <strong t-out="object.name or ''"/>.
+    </p>
+    <p style="margin:0 0 10px;font-size:13px;line-height:1.7;">
+        Total: <strong t-out="format_amount(object.amount_total, object.currency_id) or ''"/>.<br/>
+        Status: <strong>Paid</strong>
+    </p>
+    <p style="margin:0;font-size:13px;line-height:1.7;">
+        Please find the invoice PDF attached.
+    </p>
+</div>
+        </field>
+        <field name="report_template_ids" eval="[(6, 0, [ref('tynor_sale_report_custom.action_report_invoice_tynor')])]"/>
+    </record>
 </odoo>

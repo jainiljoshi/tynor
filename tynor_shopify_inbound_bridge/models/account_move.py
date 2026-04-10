@@ -2,7 +2,7 @@ import logging
 import re
 import base64
 
-from odoo import _, api, fields, models
+from odoo import api, fields, models
 
 from .utils import extract_external_values, normalize_payment_display
 
@@ -40,6 +40,19 @@ class AccountMove(models.Model):
     tynor_paid_email_sent = fields.Boolean(default=False, copy=False, readonly=True, index=True)
     tynor_paid_email_sent_at = fields.Datetime(copy=False, readonly=True)
     tynor_paid_chatter_posted = fields.Boolean(default=False, copy=False, readonly=True, index=True)
+
+    _TYNOR_PAID_INVOICE_TEMPLATE_XMLIDS = (
+        "tynor_shopify_inbound_bridge.mail_template_invoice_paid_tynor",
+        "tynor_shopify_inbound_bridge.mail_template_paid_invoice_tynor",
+        "tynor_sale_report_custom.mail_template_invoice_paid_tynor",
+        "tynor_sale_report_custom.mail_template_paid_invoice_tynor",
+        "tynor_sale_report_custom.mail_template_account_move_tynor",
+    )
+    _TYNOR_INVOICE_REPORT_XMLIDS = (
+        "tynor_sale_report_custom.action_report_invoice_tynor",
+        "tynor_sale_report_custom.action_report_account_move_tynor",
+        "tynor_sale_report_custom.action_report_account_invoice_tynor",
+    )
 
     @api.depends(
         "invoice_line_ids.display_type",
@@ -222,8 +235,6 @@ class AccountMove(models.Model):
 
     def _tynor_send_paid_invoice_email(self):
         self.ensure_one()
-        if self.tynor_paid_chatter_posted:
-            return False
         if self.state != "posted" or self.move_type not in ("out_invoice", "out_receipt"):
             return False
         if self.payment_state != "paid" or self.tynor_paid_email_sent:
@@ -231,14 +242,15 @@ class AccountMove(models.Model):
         recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
         if not recipient_email:
             return False
-        template = self._get_mail_template() or self.env.ref("account.email_template_edi_invoice", raise_if_not_found=False)
+        template = self._tynor_get_paid_invoice_email_template()
         if not template:
+            _logger.warning("No Tynor paid-invoice mail template found for invoice %s", self.id)
             return False
         attachment = self._tynor_get_invoice_pdf_mail_attachment()
-        chatter_attachment = False
+        attachment_id = False
         if attachment:
             filename, content = attachment
-            chatter_attachment = self.env["ir.attachment"].sudo().create(
+            attachment_id = self.env["ir.attachment"].sudo().create(
                 {
                     "name": filename,
                     "datas": content,
@@ -251,22 +263,13 @@ class AccountMove(models.Model):
         email_values = {
             "email_to": recipient_email,
         }
-        if chatter_attachment:
-            email_values["attachment_ids"] = [(4, chatter_attachment.id)]
-        elif attachment:
-            email_values["attachments"] = [attachment]
+        if attachment_id:
+            # Override template-generated attachments to ensure the sent PDF is the Tynor invoice report.
+            email_values["attachment_ids"] = [(6, 0, [attachment_id.id])]
         try:
             mail_id = template.send_mail(self.id, force_send=True, email_values=email_values)
         except Exception:
             _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
-            if chatter_attachment and not self.tynor_paid_chatter_posted:
-                try:
-                    self._tynor_post_paid_invoice_pdf_in_chatter(
-                        recipient_email=recipient_email,
-                        chatter_attachment=chatter_attachment,
-                    )
-                except Exception:
-                    _logger.exception("Failed to post fallback paid invoice PDF chatter note for invoice %s", self.id)
             return False
         if mail_id:
             self.sudo().with_context(tynor_skip_bridge=True).write(
@@ -275,70 +278,66 @@ class AccountMove(models.Model):
                     "tynor_paid_email_sent_at": fields.Datetime.now(),
                 }
             )
-            self._tynor_post_paid_invoice_pdf_in_chatter(
-                recipient_email=recipient_email,
-                chatter_attachment=chatter_attachment,
-            )
         return bool(mail_id)
 
-    def _tynor_post_paid_invoice_pdf_in_chatter(self, recipient_email=None, chatter_attachment=False):
+    def _tynor_get_paid_invoice_email_template(self):
         self.ensure_one()
-        if self.tynor_paid_chatter_posted:
-            return False
-        if self.state != "posted" or self.move_type not in ("out_invoice", "out_receipt"):
-            return False
-        if self.payment_state != "paid":
-            return False
+        for xmlid in self._TYNOR_PAID_INVOICE_TEMPLATE_XMLIDS:
+            template = self.env.ref(xmlid, raise_if_not_found=False)
+            if template and template.model_id.model == self._name:
+                return template
 
-        if not chatter_attachment:
-            attachment = self._tynor_get_invoice_pdf_mail_attachment()
-            if attachment:
-                filename, content = attachment
-                chatter_attachment = self.env["ir.attachment"].sudo().create(
-                    {
-                        "name": filename,
-                        "datas": content,
-                        "res_model": self._name,
-                        "res_id": self.id,
-                        "mimetype": "application/pdf",
-                        "type": "binary",
-                    }
-                )
-
-        if not chatter_attachment:
-            return False
-
-        recipient = recipient_email or (self.partner_id.email or self.commercial_partner_id.email or "").strip()
-        body = _("Invoice PDF attached in chatter for paid invoice.")
-        if recipient:
-            body = _("Invoice email auto-sent for paid invoice to <b>%s</b>. PDF attached in chatter.") % recipient
-
-        self.message_post(
-            body=body,
-            message_type="comment",
-            subtype_xmlid="mail.mt_note",
-            attachment_ids=[chatter_attachment.id],
+        model_data = self.env["ir.model.data"].sudo().search(
+            [
+                ("model", "=", "mail.template"),
+                ("module", "in", ("tynor_sale_report_custom", "tynor_shopify_inbound_bridge")),
+                ("name", "ilike", "tynor"),
+            ],
+            order="id asc",
         )
-        # Keep this idempotent even if downstream flows retry this method.
-        self.sudo().with_context(tynor_skip_bridge=True).write(
-            {
-                "tynor_paid_chatter_posted": True,
-                "tynor_paid_email_sent": True,
-                "tynor_paid_email_sent_at": self.tynor_paid_email_sent_at or fields.Datetime.now(),
-            }
+        if not model_data:
+            return False
+
+        for item in model_data:
+            template = self.env["mail.template"].browse(item.res_id)
+            if template.exists() and template.model_id.model == self._name:
+                return template
+        return False
+
+    def _tynor_get_invoice_report_action(self):
+        self.ensure_one()
+        for xmlid in self._TYNOR_INVOICE_REPORT_XMLIDS:
+            report = self.env.ref(xmlid, raise_if_not_found=False)
+            if report and report.model == self._name:
+                return report
+
+        model_data = self.env["ir.model.data"].sudo().search(
+            [
+                ("model", "=", "ir.actions.report"),
+                ("module", "=", "tynor_sale_report_custom"),
+                "|",
+                ("name", "ilike", "invoice"),
+                ("name", "ilike", "tynor"),
+            ],
+            order="id asc",
         )
-        return True
+        if not model_data:
+            return False
+
+        for item in model_data:
+            report = self.env["ir.actions.report"].browse(item.res_id)
+            if report.exists() and report.model == self._name:
+                return report
+        return False
 
     def _tynor_get_invoice_pdf_mail_attachment(self):
         """Return invoice PDF as a mail.template-style attachment tuple."""
         self.ensure_one()
-        if self.invoice_pdf_report_id and self.invoice_pdf_report_id.raw:
-            return (
-                self.invoice_pdf_report_id.name or self._get_invoice_report_filename(),
-                base64.b64encode(self.invoice_pdf_report_id.raw),
-            )
+        report = self._tynor_get_invoice_report_action()
+        if not report:
+            _logger.warning("No Tynor invoice report action found for invoice %s", self.id)
+            return False
 
-        report = self.env.ref("account.account_invoices")
         pdf_content, report_type = report._render_qweb_pdf(report.report_name, self.ids)
         if not pdf_content:
             return False
@@ -371,8 +370,6 @@ class AccountMove(models.Model):
                     if not self.env.context.get("tynor_disable_paid_email"):
                         if not move.tynor_paid_email_sent:
                             move._tynor_send_paid_invoice_email()
-                    if not move.tynor_paid_chatter_posted:
-                        move._tynor_post_paid_invoice_pdf_in_chatter()
 
                 if move._tynor_get_existing_bridge_payment() or move.payment_state == "paid":
                     move.with_context(tynor_skip_bridge=True).write({"tynor_bridge_payment_synced": True})
@@ -395,10 +392,8 @@ class AccountMove(models.Model):
                 ("state", "=", "posted"),
                 ("move_type", "in", ("out_invoice", "out_receipt")),
                 "|",
-                "|",
                 ("tynor_bridge_payment_synced", "=", False),
                 ("tynor_paid_email_sent", "=", False),
-                ("tynor_paid_chatter_posted", "=", False),
             ],
             order="id asc",
             limit=limit,
