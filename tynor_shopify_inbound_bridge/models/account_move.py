@@ -260,41 +260,32 @@ class AccountMove(models.Model):
             return False
         if locked_payment_state != "paid" or locked_sent:
             return False
-        # Mark as sent within the same transaction (no cr.commit!).
-        # The FOR UPDATE SKIP LOCKED above already holds the row lock,
-        # preventing any concurrent worker from entering this path.
-        # The flag is written now so that even if this method is somehow
-        # called again within the same request, the locked_sent check above
-        # will catch it.  The actual DB commit happens at the end of the
-        # HTTP request / cron cycle, which is the normal Odoo pattern.
+
+        # Use Odoo native invoice send engine (same backend flow as the "Send"
+        # action), only forcing the email sending method.
+        try:
+            self.env["account.move.send"]._generate_and_send_invoices(
+                self,
+                allow_fallback_pdf=True,
+                sending_methods=["email"],
+            )
+        except Exception:
+            _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
+            return False
+
+        # Mark success after native send flow completed.
         self.env.cr.execute(
             """
             UPDATE account_move
                SET tynor_paid_email_sent = TRUE,
-                   tynor_paid_email_sent_at = (NOW() AT TIME ZONE 'UTC')
+                   tynor_paid_email_sent_at = (NOW() AT TIME ZONE 'UTC'),
+                   tynor_paid_chatter_posted = TRUE
              WHERE id = %s
             """,
             (self.id,),
         )
-        self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at"])
-        recipient_email = (self.partner_id.email or self.commercial_partner_id.email or "").strip()
-        if not recipient_email:
-            return False
-        template = self._tynor_get_paid_invoice_email_template()
-        if not template:
-            _logger.warning("No Tynor paid-invoice mail template found for invoice %s", self.id)
-            return False
-        email_values = {
-            "email_to": recipient_email,
-        }
-        try:
-            mail_id = template.send_mail(self.id, force_send=True, email_values=email_values)
-        except Exception:
-            _logger.exception("Failed to auto-send paid invoice email for invoice %s", self.id)
-            return False
-        if mail_id:
-            self._tynor_post_paid_chatter_note(recipient_email)
-        return bool(mail_id)
+        self.invalidate_recordset(["tynor_paid_email_sent", "tynor_paid_email_sent_at", "tynor_paid_chatter_posted"])
+        return True
 
     def _tynor_post_paid_chatter_note(self, recipient_email=None):
         """Post an internal chatter note confirming the paid-invoice email was sent."""
@@ -438,9 +429,6 @@ class AccountMove(models.Model):
                 if move.payment_state == "paid":
                     if not move.tynor_paid_email_sent:
                         move._tynor_send_paid_invoice_email()
-                    elif not move.tynor_paid_chatter_posted:
-                        # Email was sent but chatter note failed — retry.
-                        move._tynor_post_paid_chatter_note()
 
                 if move._tynor_get_existing_bridge_payment() or move.payment_state == "paid":
                     move.with_context(tynor_skip_bridge=True).write({"tynor_bridge_payment_synced": True})
