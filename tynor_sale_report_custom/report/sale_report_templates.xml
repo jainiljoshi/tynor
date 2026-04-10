@@ -356,7 +356,7 @@
                 <t t-set="mail_company" t-value="(record and record._fields.get('company_id') and record.company_id) or company"/>
                 <t t-if="mail_company.logo">
                     <img
-                        t-att-src="'data:image/png;base64,%s' % (mail_company.logo.decode() if hasattr(mail_company.logo, 'decode') else mail_company.logo)"
+                        t-att-src="'data:image/png;base64,%s' % mail_company.logo"
                         style="padding: 0px; margin: 0px; height: 48px;"
                         t-att-alt="'%s' % mail_company.name"
                     />
