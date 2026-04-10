@@ -367,7 +367,6 @@
             </td>
         </xpath>
         <xpath expr="//tr[td/a[contains(@href, 'odoo.com')]]" position="replace"/>
-        <xpath expr="//tr[td[contains(normalize-space(.), 'Powered by')]]" position="replace"/>
     </template>
 
     <record id="sale.email_template_edi_sale" model="mail.template">
