@@ -9,6 +9,7 @@
     "data": [
         "report/sale_report_templates.xml",
         "data/mail_template_data.xml",
+        "views/account_move_views.xml",
         "views/sale_order_views.xml",
     ],
     "installable": True,
