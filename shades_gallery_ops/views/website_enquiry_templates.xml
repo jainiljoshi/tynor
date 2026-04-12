@@ -1,0 +1,68 @@
+<odoo>
+    <record id="shades_enquiry_page" model="ir.ui.view">
+        <field name="name">shades.enquiry.page</field>
+        <field name="type">qweb</field>
+        <field name="key">shades_gallery_ops.shades_enquiry_page</field>
+        <field name="arch" type="xml">
+            <t t-name="shades_gallery_ops.shades_enquiry_page">
+                <t t-call="website.layout">
+                    <div class="container my-5">
+                        <h2>Enquiry Form</h2>
+                        <form action="/enquiry/submit" method="post" class="mt-4">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <div class="mb-3">
+                                <label class="form-label">Name</label>
+                                <input class="form-control" type="text" name="name" required="1"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input class="form-control" type="email" name="email" required="1"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input class="form-control" type="text" name="phone"/>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">How did you hear about us?</label>
+                                <select class="form-select" name="lead_source" required="1">
+                                    <option value="google_ads">Google Ads</option>
+                                    <option value="facebook_ads">Facebook Ads</option>
+                                    <option value="tiktok">TikTok</option>
+                                    <option value="website" selected="selected">Website</option>
+                                    <option value="referral">Referral</option>
+                                    <option value="walk_in">Walk-in</option>
+                                    <option value="google_business">Google My Business</option>
+                                    <option value="phone">Phone Call</option>
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="social_media">Social Media</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Enquiry Details</label>
+                                <textarea class="form-control" name="details" rows="5"/>
+                            </div>
+                            <button class="btn btn-primary" type="submit">Submit Enquiry</button>
+                        </form>
+                    </div>
+                </t>
+            </t>
+        </field>
+    </record>
+
+    <record id="shades_enquiry_thank_you" model="ir.ui.view">
+        <field name="name">shades.enquiry.thank.you</field>
+        <field name="type">qweb</field>
+        <field name="key">shades_gallery_ops.shades_enquiry_thank_you</field>
+        <field name="arch" type="xml">
+            <t t-name="shades_gallery_ops.shades_enquiry_thank_you">
+                <t t-call="website.layout">
+                    <div class="container my-5">
+                        <h2>Thank you for contacting us</h2>
+                        <p>We have received your enquiry and will contact you soon.</p>
+                    </div>
+                </t>
+            </t>
+        </field>
+    </record>
+</odoo>

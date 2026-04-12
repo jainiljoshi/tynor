@@ -1,0 +1,27 @@
+{
+    "name": "Shades Gallery Operations",
+    "summary": "CRM, enquiry capture, sales-to-invoice automation, and installation job tracking",
+    "version": "saas~19.2.1.1",
+    "category": "Sales",
+    "author": "The Shades Gallery",
+    "license": "LGPL-3",
+    "depends": [
+        "crm",
+        "website",
+        "sale_management",
+        "account",
+        "project",
+        "mail",
+    ],
+    "data": [
+        "security/ir.model.access.csv",
+        "data/mail_templates.xml",
+        "views/crm_lead_views.xml",
+        "views/sale_order_views.xml",
+        "views/installation_job_views.xml",
+        "views/menu_visibility_views.xml",
+        "views/website_enquiry_templates.xml",
+    ],
+    "installable": True,
+    "application": False,
+}

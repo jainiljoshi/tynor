@@ -1,0 +1,15 @@
+<odoo>
+    <record id="view_sale_order_form_shades_ops" model="ir.ui.view">
+        <field name="name">sale.order.form.shades.ops</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice_status']" position="after">
+                <field name="shades_paid_ratio" readonly="1"/>
+                <field name="shades_paid_amount" readonly="1"/>
+                <field name="shades_balance_due" readonly="1"/>
+                <field name="shades_installation_job_id" readonly="1"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

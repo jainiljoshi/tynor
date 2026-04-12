@@ -1,0 +1,43 @@
+<odoo>
+    <record id="view_shades_installation_job_tree" model="ir.ui.view">
+        <field name="name">shades.installation.job.tree</field>
+        <field name="model">shades.installation.job</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="sale_order_id"/>
+                <field name="partner_id"/>
+                <field name="stage"/>
+                <field name="expected_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shades_installation_job_form" model="ir.ui.view">
+        <field name="name">shades.installation.job.form</field>
+        <field name="model">shades.installation.job</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="sale_order_id"/>
+                        <field name="partner_id" readonly="1"/>
+                        <field name="stage"/>
+                        <field name="expected_date"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_shades_installation_jobs" model="ir.actions.act_window">
+        <field name="name">Installation Jobs</field>
+        <field name="res_model">shades.installation.job</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_shades_installation_root" name="Shades Operations" parent="project.menu_main_pm" sequence="95"/>
+    <menuitem id="menu_shades_installation_jobs" name="Installation Jobs" parent="menu_shades_installation_root" action="action_shades_installation_jobs" sequence="10"/>
+</odoo>
