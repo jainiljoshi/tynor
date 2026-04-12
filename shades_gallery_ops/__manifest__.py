@@ -1,7 +1,7 @@
 {
     "name": "Shades Gallery Operations",
     "summary": "CRM, enquiry capture, sales-to-invoice automation, and installation job tracking",
-    "version": "saas~19.2.1.1",
+    "version": "saas~19.2.1.2",
     "category": "Sales",
     "author": "The Shades Gallery",
     "license": "LGPL-3",

@@ -7,7 +7,13 @@
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
                 <page string="Hide Specific Menus">
-                    <field name="hide_menu_ids" widget="many2many_tags"/>
+                    <group>
+                        <field name="hide_menu_ids" nolabel="1" widget="many2many">
+                            <list>
+                                <field name="complete_name"/>
+                            </list>
+                        </field>
+                    </group>
                 </page>
             </xpath>
         </field>
@@ -20,7 +26,14 @@
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="inside">
                 <page string="Restricted Users">
-                    <field name="restrict_user_ids" widget="many2many_tags"/>
+                    <group>
+                        <field name="restrict_user_ids" nolabel="1" widget="many2many">
+                            <list>
+                                <field name="name"/>
+                                <field name="login"/>
+                            </list>
+                        </field>
+                    </group>
                 </page>
             </xpath>
         </field>
