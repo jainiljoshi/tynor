@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_shades_installation_job_user,access_shades_installation_job_user,model_shades_installation_job,base.group_user,1,1,1,1
