@@ -5,7 +5,7 @@
         <field name="url">/ndis</field>
         <field name="parent_id" ref="website.main_menu"/>
         <field name="sequence">55</field>
-        <field name="active">False</field>
+        <field name="group_ids" eval="[(6, 0, [ref('base.group_no_one')])]"/>
     </record>
 
     <template id="ndis_page" name="NDIS Form Page">
