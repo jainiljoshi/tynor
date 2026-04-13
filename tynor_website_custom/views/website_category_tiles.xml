@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <template id="tynor_category_tiles_block" name="Tynor Category Tiles Block">
-        <t t-set="sub_categories" t-value="env['product.public.category'].sudo().search([('parent_id', '!=', False), ('has_published_products', '=', True), ('not_in_shop', '=', False)], order='sequence, name')"/>
-        <t t-set="tile_categories" t-value="sub_categories or env['product.public.category'].sudo().search([('parent_id', '=', False), ('has_published_products', '=', True), ('not_in_shop', '=', False)], order='sequence, name')"/>
+        <t t-set="sub_categories" t-value="env['product.public.category'].sudo().search([('parent_id', '!=', False), ('not_in_shop', '=', False)], order='sequence, name')"/>
+        <t t-set="tile_categories" t-value="sub_categories or env['product.public.category'].sudo().search([('parent_id', '=', False), ('not_in_shop', '=', False)], order='sequence, name')"/>
         <section id="shop-by-category-section" class="s_tynor_category_tiles py-5" data-name="Shop by Category Tiles">
             <div class="container">
                 <div class="d-flex justify-content-between align-items-end mb-3">
@@ -54,14 +54,14 @@
                 </a>
                 <div class="dropdown-menu p-3 border-0 shadow tynor-category-mega-menu" role="menu">
                     <div class="row g-3">
-                        <t t-set="main_categories" t-value="env['product.public.category'].sudo().search([('parent_id', '=', False), ('not_in_shop', '=', False)], order='sequence, name', limit=9)"/>
+                        <t t-set="main_categories" t-value="env['product.public.category'].sudo().search([('parent_id', '=', False), ('not_in_shop', '=', False)], order='sequence, name')"/>
                         <t t-foreach="main_categories" t-as="main_cat">
                             <div class="col-12 col-lg-4">
                                 <a t-att-href="'/shop/category/%s' % main_cat.id" class="text-decoration-none">
                                     <h6 class="mb-2 tynor-mega-main-title" t-out="main_cat.name"/>
                                 </a>
                                 <div class="row g-2">
-                                    <t t-set="subcats" t-value="main_cat.child_id.filtered(lambda c: c.has_published_products and not c.not_in_shop)[:8]"/>
+                                    <t t-set="subcats" t-value="main_cat.child_id.filtered(lambda c: not c.not_in_shop)"/>
                                     <t t-if="subcats">
                                         <t t-foreach="subcats" t-as="cat">
                                             <div class="col-6">

@@ -29,3 +29,16 @@ class ResConfigSettings(models.TransientModel):
         config_parameter="tynor.ndis_notification_email",
         default="info@tynoraus.com.au",
     )
+    x_tynor_ndis_enabled = fields.Boolean(
+        string="Enable NDIS Website Form",
+        config_parameter="tynor.ndis_enabled",
+        default=True,
+    )
+
+    def set_values(self):
+        res = super().set_values()
+        menu = self.env.ref("tynor_website_custom.menu_ndis_website", raise_if_not_found=False)
+        if menu:
+            for record in self:
+                menu.sudo().write({"active": bool(record.x_tynor_ndis_enabled)})
+        return res

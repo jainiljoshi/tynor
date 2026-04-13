@@ -21,6 +21,9 @@
                     <setting id="tynor_new_wholesaler_notification_text_setting" string="Website Banner Text">
                         <field name="tynor_new_wholesaler_notification_text" placeholder="Welcome to our growing wholesale network! A new wholesaler has joined."/>
                     </setting>
+                    <setting id="tynor_ndis_enabled_setting" string="Enable NDIS Form &amp; Menu">
+                        <field name="x_tynor_ndis_enabled"/>
+                    </setting>
                     <setting id="tynor_ndis_internal_notification_email_setting" string="NDIS Internal Notification Email">
                         <field name="x_tynor_ndis_notification_email" placeholder="info@tynoraus.com.au"/>
                     </setting>

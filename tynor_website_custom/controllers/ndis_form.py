@@ -3,8 +3,13 @@ from odoo.http import request
 
 
 class TynorNdisFormController(http.Controller):
+    def _is_ndis_enabled(self):
+        return request.env["ir.config_parameter"].sudo().get_param("tynor.ndis_enabled", default="1") == "1"
+
     @http.route("/ndis", type="http", auth="public", website=True)
     def ndis_page(self, **kwargs):
+        if not self._is_ndis_enabled():
+            return request.redirect("/")
         products = request.env["product.product"].sudo().search(
             [
                 ("sale_ok", "=", True),
@@ -18,10 +23,14 @@ class TynorNdisFormController(http.Controller):
 
     @http.route("/ndis/thank-you", type="http", auth="public", website=True)
     def ndis_thank_you(self, **kwargs):
+        if not self._is_ndis_enabled():
+            return request.redirect("/")
         return request.render("tynor_website_custom.ndis_thank_you", {})
 
     @http.route("/ndis/submit", type="http", auth="public", website=True, methods=["POST"], csrf=True)
     def ndis_submit(self, **post):
+        if not self._is_ndis_enabled():
+            return request.redirect("/")
         required_fields = {
             "ndis_number": _("NDIS Number"),
             "plan_type": _("Plan Type"),
