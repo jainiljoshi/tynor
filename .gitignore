@@ -10,9 +10,10 @@ __pycache__/
 # Local exports / temp data
 exported/
 exported data/
-*.csv
 *.zip
 *.log
 SECRETS.local.md
 
 # Keep only module source + helper scripts explicitly if needed
+_ai_technical_context.md
+_ai_functional_context.md
