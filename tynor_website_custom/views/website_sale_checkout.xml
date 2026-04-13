@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="cart_lines_price_discount_breakdown" inherit_id="website_sale.cart_lines_price" priority="60" name="Cart Line Retail and Savings">
+        <xpath expr="//h6[@name='website_sale_cart_line_price']" position="replace">
+            <t t-set="product_price" t-value="line._get_cart_display_price()"/>
+            <t t-set="order_date" t-value="website_sale_order.date_order and website_sale_order.date_order.date() or None"/>
+            <t t-set="retail_native_price" t-value="line.product_id.product_tmpl_id.tynor_retail_price or line.product_id.lst_price"/>
+            <t t-set="retail_unit_price" t-value="line.product_id.currency_id._convert(retail_native_price, website_sale_order.currency_id, website_sale_order.company_id, order_date)"/>
+            <t t-set="retail_total_price" t-value="retail_unit_price * line.product_uom_qty"/>
+            <t t-set="discount_amount" t-value="retail_total_price - product_price"/>
+            <t t-set="discount_pct" t-value="retail_total_price and (discount_amount / retail_total_price) * 100.0 or 0.0"/>
+
+            <h6
+                class="d-flex flex-column flex-md-row align-items-end align-items-md-start justify-content-md-end mb-1"
+                name="website_sale_cart_line_price"
+            >
+                <t t-call="website_sale.cart_product_price"/>
+            </h6>
+            <div class="small text-end">
+                <span class="text-muted me-1">Retail:</span>
+                <span t-out="retail_total_price" t-options="{'widget': 'monetary', 'display_currency': website_sale_order.currency_id}"/>
+                <t t-if="discount_amount &gt; 0.0">
+                    <span class="text-success d-block">
+                        You save
+                        <span t-out="discount_amount" t-options="{'widget': 'monetary', 'display_currency': website_sale_order.currency_id}"/>
+                        (<span t-out="'%.0f' % discount_pct"/>% off)
+                    </span>
+                </t>
+            </div>
+            <small
+                t-if="line._is_sellable() and line.env['res.groups']._is_feature_enabled('website_sale.group_show_uom_price') and line.product_id.base_unit_price"
+                class="cart_product_base_unit_price d-block text-muted text-end"
+                groups="website_sale.group_show_uom_price"
+            >
+                <t t-set="product" t-value="line.product_id"/>
+                <t t-call="website_sale.base_unit_price"
+                    product="product"
+                    base_unit_price="product._get_base_unit_price(product_price/line.product_qty)"/>
+            </small>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="remove_product_description_from_title" inherit_id="website_sale.product_title" priority="60" name="Remove Product Description from Title Block">
+        <xpath expr="//div[@t-field='product.description_ecommerce']" position="replace"/>
+    </template>
+
+    <template id="move_product_description_below_terms" inherit_id="website_sale.product" priority="60" name="Move Product Description Below Terms">
+        <xpath expr="//div[@id='o_wsale_product_cta_section']" position="after">
+            <div class="tynor_product_description mt-3" t-if="product.description_ecommerce">
+                <div t-field="product.description_ecommerce"/>
+            </div>
+        </xpath>
+    </template>
+</odoo>

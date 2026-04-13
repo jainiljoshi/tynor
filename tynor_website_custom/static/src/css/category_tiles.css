@@ -1,0 +1,59 @@
+.s_tynor_category_tiles .tynor-category-tile {
+    display: block;
+}
+
+.s_tynor_category_tiles .tynor-category-tile-media {
+    border-radius: 14px;
+    overflow: hidden;
+    position: relative;
+    background: #f2f4f7;
+}
+
+.s_tynor_category_tiles .tynor-category-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.06) 30%, rgba(123, 63, 160, 0.56) 100%);
+    transition: background 0.25s ease;
+}
+
+.s_tynor_category_tiles .tynor-category-name {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.92rem;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.s_tynor_category_tiles .tynor-category-tile:hover .tynor-category-overlay {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 30%, rgba(123, 63, 160, 0.72) 100%);
+}
+
+.tynor-category-mega-menu {
+    min-width: 470px;
+    max-width: 620px;
+}
+
+.tynor-mega-category-card:hover {
+    background: rgba(123, 63, 160, 0.09);
+}
+
+.tynor-shop-category-item {
+    border: 1px solid #e5e7eb;
+    color: #111827;
+    background: #fff;
+}
+
+.tynor-shop-category-item.active,
+.tynor-shop-category-item:hover {
+    border-color: #7B3FA0;
+    background: rgba(123, 63, 160, 0.08);
+}
+
+@media (max-width: 991.98px) {
+    .tynor-category-mega-menu {
+        min-width: 100%;
+    }
+}

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="mail_template_tynor_ndis_order" model="mail.template">
+        <field name="name">Tynor NDIS Request Confirmation</field>
+        <field name="model_id" ref="model_tynor_ndis_order"/>
+        <field name="subject">NDIS Request {{ object.name }} Received</field>
+        <field name="email_from">{{ (user.email_formatted or user.company_id.email_formatted or '') }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family:Arial,sans-serif;line-height:1.6;color:#1f2937;">
+                <h3 style="margin:0 0 12px;color:#7B3FA0;">NDIS Request Received</h3>
+                <p>Hello <t t-out="object.participant_name or ''"/>,</p>
+                <p>We received your NDIS request and our team will review it shortly.</p>
+                <p><strong>Reference:</strong> <t t-out="object.name"/></p>
+                <p><strong>NDIS Number:</strong> <t t-out="object.ndis_number"/></p>
+                <p><strong>Plan Type:</strong> <t t-out="dict(object._fields['plan_type'].selection).get(object.plan_type, '')"/></p>
+                <p>If you need support, please reply to this email.</p>
+            </div>
+        </field>
+        <field name="auto_delete" eval="True"/>
+    </record>
+</odoo>

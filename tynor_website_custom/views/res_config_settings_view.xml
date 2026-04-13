@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_tynor_website_custom" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.tynor.website.custom</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="account.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='invoicing_settings']" position="inside">
+                <setting id="tynor_auto_invoice_card" string="Tynor Auto Invoicing (Card Payments)">
+                    <field name="x_tynor_auto_invoice_card"/>
+                </setting>
+                <setting id="tynor_auto_invoice_bank_validation" string="Tynor Bank/Net30 Requires Manual Validation">
+                    <field name="x_tynor_auto_invoice_bank_require_validation"/>
+                </setting>
+            </xpath>
+            <xpath expr="//app[@name='account']" position="inside">
+                <block title="Tynor Wholesale Notifications" name="tynor_wholesale_notification_block">
+                    <setting id="tynor_new_wholesaler_notification_active_setting" string="Enable Website New Wholesaler Banner">
+                        <field name="tynor_new_wholesaler_notification_active"/>
+                    </setting>
+                    <setting id="tynor_new_wholesaler_notification_text_setting" string="Website Banner Text">
+                        <field name="tynor_new_wholesaler_notification_text" placeholder="Welcome to our growing wholesale network! A new wholesaler has joined."/>
+                    </setting>
+                    <setting id="tynor_ndis_internal_notification_email_setting" string="NDIS Internal Notification Email">
+                        <field name="x_tynor_ndis_notification_email" placeholder="info@tynoraus.com.au"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_tynor_wholesale_settings" model="ir.actions.act_window">
+        <field name="name">Wholesale Configuration</field>
+        <field name="res_model">res.config.settings</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'module': 'tynor_website_custom'}</field>
+    </record>
+
+    <menuitem
+        id="menu_tynor_wholesale_configuration"
+        name="Configuration"
+        parent="tynor_wholesale_management.menu_wholesale_root"
+        action="action_tynor_wholesale_settings"
+        groups="account.group_account_manager,tynor_wholesale_management.group_wholesale_manager"
+        sequence="90"
+    />
+</odoo>

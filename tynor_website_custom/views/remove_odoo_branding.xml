@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_tags_hide_odoo" inherit_id="website_sale.product_tags" priority="70" name="Hide Odoo Product Tag">
+        <xpath expr="//t[@t-set='visible_tags']" position="replace">
+            <t t-set="visible_tags" t-value="all_product_tags.filtered(lambda t: t.visible_to_customers and (t.name or '').strip().lower() != 'odoo')"/>
+        </xpath>
+    </template>
+
+    <template id="website_layout_remove_odoo_links" inherit_id="website.layout" priority="70" name="Remove Odoo Website Branding">
+        <xpath expr="//t[@t-call='web.brand_promotion']/.." position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+        <head position="inside">
+            <link rel="icon" type="image/png" href="/tynor_sale_report_custom/static/description/icon.png"/>
+        </head>
+    </template>
+
+    <template id="external_layout_standard_remove_odoo" inherit_id="web.external_layout_standard" priority="70" name="Remove Odoo PDF Branding">
+        <xpath expr="//div[contains(@t-attf-class, 'footer')]" position="attributes">
+            <attribute name="t-if">False</attribute>
+        </xpath>
+    </template>
+</odoo>

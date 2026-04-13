@@ -1,0 +1,142 @@
+.tynor-login-order-btn {
+    background: #7B3FA0;
+    border-color: #7B3FA0;
+    color: #fff;
+}
+
+.tynor-login-order-btn:hover,
+.tynor-login-order-btn:focus {
+    background: #66338a;
+    border-color: #66338a;
+    color: #fff;
+}
+
+.tynor-login-price-msg {
+    color: #475569;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.tynor_product_description {
+    font-size: 14px;
+    color: #555;
+    line-height: 1.6;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #eee;
+}
+
+.tynor-wholesale-notification-banner {
+    background: #7B3FA0;
+    color: #fff;
+    border: none;
+}
+
+.tynor-wholesale-welcome-banner {
+    border: 1px solid #e5d4ef;
+    background: #faf6ff;
+}
+
+.o_product_tags .text-nowrap.small {
+    display: inline-block;
+}
+
+.o_product_tags span[style*="odoo"],
+[data-tag="Odoo"],
+.o_product_tags [title="Odoo"] {
+    display: none !important;
+}
+
+.tynor-ndis-hero {
+    background: linear-gradient(90deg, rgba(123, 63, 160, 0.92) 0%, rgba(16, 185, 129, 0.85) 100%);
+    color: #fff;
+}
+
+.tynor-ndis-form .form-label {
+    font-weight: 600;
+}
+
+.js-ndis-selected-tags .badge {
+    background: #7B3FA0;
+}
+
+.tynor-ndis-multiselect {
+    position: relative;
+}
+
+.tynor-ndis-multiselect .js-ndis-dropdown-toggle {
+    min-height: 44px;
+}
+
+.tynor-ndis-multiselect.is-open .js-ndis-dropdown-toggle {
+    border-color: #7B3FA0;
+    box-shadow: 0 0 0 0.15rem rgba(123, 63, 160, 0.12);
+}
+
+.tynor-ndis-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 50;
+    border: 1px solid #ced4da;
+    border-radius: 0.5rem;
+    background: #fff;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    padding: 0.75rem;
+}
+
+.tynor-ndis-options {
+    max-height: 260px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+}
+
+.tynor-ndis-option {
+    display: block;
+    padding: 0.5rem 0.625rem;
+    border-bottom: 1px solid #f1f5f9;
+    cursor: pointer;
+}
+
+.tynor-ndis-option:last-child {
+    border-bottom: 0;
+}
+
+.tynor-ndis-option:hover {
+    background: #f8fafc;
+}
+
+.tynor-size-chart-trigger .btn {
+    min-width: 140px;
+}
+
+.tynor-bulk-size-order {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.875rem;
+    background: #f8fafc;
+}
+
+.tynor-bulk-size-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.625rem;
+    align-items: flex-end;
+}
+
+.tynor-bulk-size-cell {
+    min-width: 88px;
+    flex: 0 0 auto;
+}
+
+.tynor-bulk-size-cell input {
+    width: 88px;
+}
+
+.tynor-bulk-size-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}

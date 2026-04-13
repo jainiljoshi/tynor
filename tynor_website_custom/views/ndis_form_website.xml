@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="menu_ndis_website" model="website.menu">
+        <field name="name">NDIS</field>
+        <field name="url">/ndis</field>
+        <field name="parent_id" ref="website.main_menu"/>
+        <field name="sequence">55</field>
+    </record>
+
+    <template id="ndis_page" name="NDIS Form Page">
+        <t t-call="website.layout" additional_title="'NDIS Registered Provider For Self Managed, Plan Managed &amp; NDIA Managed | NDIS Service Provider in Australia'">
+            <div id="wrap" class="oe_structure">
+                <section class="py-5 tynor-ndis-hero">
+                    <div class="container">
+                        <h1 class="h2 mb-2">NDIS Registered Provider For Self Managed, Plan Managed &amp; NDIA Managed</h1>
+                        <p class="lead mb-0">Submit your NDIS request and our team will prepare your order support quickly.</p>
+                    </div>
+                </section>
+
+                <section class="py-4">
+                    <div class="container">
+                        <div t-if="error" class="alert alert-danger" role="alert" t-out="error"/>
+                        <form action="/ndis/submit" method="post" class="row g-3 tynor-ndis-form">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                            <div class="col-md-6">
+                                <label class="form-label">NDIS Number *</label>
+                                <input type="text" name="ndis_number" class="form-control" required="required" t-att-value="(form_vals or {}).get('ndis_number', '')"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">What is Plan Type? *</label>
+                                <select name="plan_type" class="form-select" required="required">
+                                    <option value="">Select plan type...</option>
+                                    <option value="self_managed" t-att-selected="(form_vals or {}).get('plan_type') == 'self_managed'">Self-managed</option>
+                                    <option value="plan_managed" t-att-selected="(form_vals or {}).get('plan_type') == 'plan_managed'">Plan-managed</option>
+                                    <option value="ndia_managed" t-att-selected="(form_vals or {}).get('plan_type') == 'ndia_managed'">NDIA-managed</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Full Name *</label>
+                                <input type="text" name="participant_name" class="form-control" placeholder="Full name of NDIS Participant" required="required" t-att-value="(form_vals or {}).get('participant_name', '')"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email *</label>
+                                <input type="email" name="email" class="form-control" required="required" t-att-value="(form_vals or {}).get('email', '')"/>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Date of Birth *</label>
+                                <input type="date" name="date_of_birth" class="form-control" required="required" t-att-value="(form_vals or {}).get('date_of_birth', '')"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" name="phone" class="form-control js-ndis-phone" placeholder="+61" t-att-value="(form_vals or {}).get('phone', '+61')"/>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Full Shipping Address *</label>
+                                <textarea name="shipping_address" class="form-control" rows="2" required="required" placeholder="Enter complete shipping address"><t t-out="(form_vals or {}).get('shipping_address', '')"/></textarea>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Plan Start Date</label>
+                                <input type="date" name="plan_start_date" class="form-control" t-att-value="(form_vals or {}).get('plan_start_date', '')"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Plan End Date</label>
+                                <input type="date" name="plan_end_date" class="form-control" t-att-value="(form_vals or {}).get('plan_end_date', '')"/>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Which product(s) participant requires? *</label>
+                                <div class="js-ndis-multiselect tynor-ndis-multiselect">
+                                    <button type="button" class="form-control text-start d-flex justify-content-between align-items-center js-ndis-dropdown-toggle">
+                                        <span class="js-ndis-dropdown-label text-muted">Select one or more products...</span>
+                                        <span class="js-ndis-dropdown-icon" aria-hidden="true">&#9662;</span>
+                                    </button>
+                                    <div class="tynor-ndis-dropdown js-ndis-dropdown d-none">
+                                        <input type="text" class="form-control mb-2 js-ndis-product-search" placeholder="Search products..."/>
+                                        <div class="tynor-ndis-options js-ndis-options"></div>
+                                    </div>
+                                    <select name="product_ids" multiple="multiple" class="js-ndis-product-select">
+                                        <t t-foreach="products" t-as="product">
+                                            <option t-att-value="product.id" t-att-selected="product.id in (selected_product_ids or [])" t-out="product.display_name"/>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="form-text">Select one or more products.</div>
+                                <div class="js-ndis-selected-tags mt-2"/>
+                                <div class="text-danger small mt-1 js-ndis-product-error d-none">Please select one or more products.</div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Where should we send the Invoice? *</label>
+                                <input type="email" name="invoice_email" class="form-control" required="required" t-att-value="(form_vals or {}).get('invoice_email', '')"/>
+                            </div>
+
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-lg tynor-login-order-btn px-5">Submit Request</button>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+
+                <section class="py-5 bg-light">
+                    <div class="container">
+                        <h2 class="h4 mb-3">Resources &amp; FAQs</h2>
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <h3 class="h6">How long does review take?</h3>
+                                <p class="mb-0">Most requests are reviewed within 1-2 business days.</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 class="h6">Do you support all plan types?</h3>
+                                <p class="mb-0">Yes. We support Self-managed, Plan-managed and NDIA-managed requests.</p>
+                            </div>
+                            <div class="col-md-4">
+                                <h3 class="h6">Need help now?</h3>
+                                <p class="mb-0">Have confusion in mind? Contact us at <a href="mailto:info@tynoraus.com.au">info@tynoraus.com.au</a>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="ndis_thank_you" name="NDIS Thank You">
+        <t t-call="website.layout" additional_title="'NDIS Request Submitted'">
+            <div id="wrap" class="oe_structure py-5">
+                <div class="container text-center">
+                    <h1 class="h3 mb-3">Thank you. Your NDIS request has been submitted.</h1>
+                    <p class="text-muted">Our team will review your request and contact you shortly.</p>
+                    <a href="/shop" class="btn btn-outline-secondary">Continue Shopping</a>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

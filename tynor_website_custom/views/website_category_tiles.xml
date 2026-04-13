@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="tynor_category_tiles_block" name="Tynor Category Tiles Block">
+        <t t-set="sub_categories" t-value="env['product.public.category'].sudo().search([('parent_id', '!=', False), ('has_published_products', '=', True), ('not_in_shop', '=', False)], order='sequence, name')"/>
+        <t t-set="tile_categories" t-value="sub_categories or env['product.public.category'].sudo().search([('parent_id', '=', False), ('has_published_products', '=', True), ('not_in_shop', '=', False)], order='sequence, name')"/>
+        <section id="shop-by-category-section" class="s_tynor_category_tiles py-5" data-name="Shop by Category Tiles">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-end mb-3">
+                    <div>
+                        <h2 class="mb-1">Shop by Category</h2>
+                        <p class="text-muted mb-0">Enhancing Lives Through Quality Care</p>
+                    </div>
+                    <a href="/shop" class="btn btn-outline-secondary btn-sm">View all products</a>
+                </div>
+                <div class="row g-3 tynor-category-grid">
+                    <t t-foreach="tile_categories" t-as="cat">
+                        <div class="col-12 col-sm-6 col-lg-3">
+                            <a t-att-href="'/shop/category/%s' % cat.id" class="tynor-category-tile text-decoration-none" t-att-title="cat.name">
+                                <div class="tynor-category-tile-media ratio ratio-1x1">
+                                    <img
+                                        t-if="cat.image_1920"
+                                        t-att-src="image_data_uri(cat.image_1920)"
+                                        t-att-alt="cat.name"
+                                        class="w-100 h-100 object-fit-cover"
+                                    />
+                                    <img
+                                        t-else=""
+                                        src="/tynor_website_custom/static/src/img/category-placeholder.svg"
+                                        t-att-alt="cat.name"
+                                        class="w-100 h-100 object-fit-cover"
+                                    />
+                                    <span class="tynor-category-overlay"/>
+                                    <span class="tynor-category-name" t-out="cat.name"/>
+                                </div>
+                            </a>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </section>
+    </template>
+
+    <template id="homepage_category_tiles_inherit" inherit_id="website.homepage" priority="40" name="Homepage Category Tiles">
+        <xpath expr="//div[@id='wrap']" position="inside">
+            <t t-call="tynor_website_custom.tynor_category_tiles_block"/>
+        </xpath>
+    </template>
+
+    <template id="navbar_shop_by_category_megamenu" inherit_id="website.navbar_nav" priority="40" name="Navbar Shop by Category Mega Menu">
+        <xpath expr="//ul" position="inside">
+            <li class="nav-item dropdown d-none d-lg-block tynor-shop-category-mega" role="none">
+                <a href="/#shop-by-category-section" class="nav-link" role="menuitem">
+                    Shop by Category
+                </a>
+                <div class="dropdown-menu p-3 border-0 shadow tynor-category-mega-menu" role="menu">
+                    <div class="row g-3">
+                        <t t-set="main_categories" t-value="env['product.public.category'].sudo().search([('parent_id', '=', False), ('not_in_shop', '=', False)], order='sequence, name', limit=9)"/>
+                        <t t-foreach="main_categories" t-as="main_cat">
+                            <div class="col-12 col-lg-4">
+                                <a t-att-href="'/shop/category/%s' % main_cat.id" class="text-decoration-none">
+                                    <h6 class="mb-2 tynor-mega-main-title" t-out="main_cat.name"/>
+                                </a>
+                                <div class="row g-2">
+                                    <t t-set="subcats" t-value="main_cat.child_id.filtered(lambda c: c.has_published_products and not c.not_in_shop)[:8]"/>
+                                    <t t-if="subcats">
+                                        <t t-foreach="subcats" t-as="cat">
+                                            <div class="col-6">
+                                                <a t-att-href="'/shop/category/%s' % cat.id" class="tynor-mega-category-card text-decoration-none d-flex align-items-center gap-2 p-2 rounded">
+                                                    <img
+                                                        t-if="cat.image_1920"
+                                                        t-att-src="image_data_uri(cat.image_1920)"
+                                                        t-att-alt="cat.name"
+                                                        class="rounded"
+                                                        width="42"
+                                                        height="42"
+                                                    />
+                                                    <img
+                                                        t-else=""
+                                                        src="/tynor_website_custom/static/src/img/category-placeholder.svg"
+                                                        t-att-alt="cat.name"
+                                                        class="rounded"
+                                                        width="42"
+                                                        height="42"
+                                                    />
+                                                    <span t-out="cat.name" class="small fw-semibold"/>
+                                                </a>
+                                            </div>
+                                        </t>
+                                    </t>
+                                    <t t-else="">
+                                        <div class="col-12">
+                                            <a t-att-href="'/shop/category/%s' % main_cat.id" class="tynor-mega-category-card text-decoration-none d-flex align-items-center gap-2 p-2 rounded">
+                                                <img
+                                                    t-if="main_cat.image_1920"
+                                                    t-att-src="image_data_uri(main_cat.image_1920)"
+                                                    t-att-alt="main_cat.name"
+                                                    class="rounded"
+                                                    width="42"
+                                                    height="42"
+                                                />
+                                                <img
+                                                    t-else=""
+                                                    src="/tynor_website_custom/static/src/img/category-placeholder.svg"
+                                                    t-att-alt="main_cat.name"
+                                                    class="rounded"
+                                                    width="42"
+                                                    height="42"
+                                                />
+                                                <span t-out="main_cat.name" class="small fw-semibold"/>
+                                            </a>
+                                        </div>
+                                    </t>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </li>
+        </xpath>
+    </template>
+
+    <template id="products_categories_list_as_tiles" inherit_id="website_sale.products_categories_list" priority="40" name="Products Categories Tiles">
+        <xpath expr="//div[@name='wsale_products_categories_list']/ul" position="replace">
+            <div class="tynor-shop-by-category-panel mb-3">
+                <div class="row g-2">
+                    <t t-foreach="categories.filtered(lambda c: c.has_published_products and not c.not_in_shop)" t-as="c">
+                        <div class="col-6 col-lg-12">
+                            <a t-att-href="keep('%s/category/%s' % (shop_path, slug(c)))" class="tynor-shop-category-item d-flex align-items-center gap-2 p-2 rounded text-decoration-none" t-attf-class="#{c.id == category.id and 'active'}">
+                                <img
+                                    t-if="c.image_1920"
+                                    t-att-src="image_data_uri(c.image_1920)"
+                                    t-att-alt="c.name"
+                                    class="rounded"
+                                    width="36"
+                                    height="36"
+                                />
+                                <img
+                                    t-else=""
+                                    src="/tynor_website_custom/static/src/img/category-placeholder.svg"
+                                    t-att-alt="c.name"
+                                    class="rounded"
+                                    width="36"
+                                    height="36"
+                                />
+                                <span t-out="c.name"/>
+                            </a>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </xpath>
+    </template>
+</odoo>

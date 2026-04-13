@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_price_public_hide" inherit_id="website_sale.product_price" priority="60" name="Hide Website Price for Public Users">
+        <xpath expr="//div[@name='product_price_container']" position="replace">
+            <div
+                name="product_price_container"
+                t-attf-class="css_editable_mode_hidden d-flex align-items-baseline {{is_view_active('website_sale.cta_wrapper_boxed') and 'justify-content-end'}} gap-2 flex-wrap h5 mb-0 text-wrap"
+            >
+                <t t-if="request.env.user._is_public()">
+                    <span class="tynor-login-price-msg mb-0">Login to view price / Contact us for price</span>
+                    <!-- <a t-att-href="'/b2b/apply'" class="btn btn-sm tynor-login-order-btn">Login to Order</a> -->
+                </t>
+                <t t-else="">
+                    <span
+                        class="oe_price"
+                        style="white-space: nowrap;"
+                        t-out="combination_info.get('list_price', combination_info.get('price'))"
+                        t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"
+                    />
+                </t>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="products_item_price_and_buttons" inherit_id="website_sale.products_item" priority="60" name="Products Item Retail Price and Login CTA">
+        <xpath expr="//div[hasclass('o_wsale_product_sub')]" position="replace">
+            <div class="o_wsale_product_sub justify-content-between gap-2">
+                <t t-set="template_price_vals" t-value="get_product_prices(product)"/>
+                <div class="product_price" aria-label="Price information">
+                    <t t-if="request.env.user._is_public()">
+                        <span class="small text-muted">Login to view price</span>
+                    </t>
+                    <t t-else="">
+                        <span
+                            class="mb-0 fw-bold"
+                            t-out="template_price_vals.get('base_price') or template_price_vals.get('price') or template_price_vals.get('price_reduce')"
+                            t-options="{'widget': 'monetary', 'display_currency': website.currency_id}"
+                        />
+                    </t>
+                </div>
+                <div class="o_wsale_product_btn">
+                    <t t-if="request.env.user._is_public()">
+                        <a t-att-href="'/b2b/apply'" class="o_wsale_product_btn_primary btn tynor-login-order-btn">
+                            <i class="fa fa-sign-in me-1" role="presentation"/>
+                            <span class="o_label small ms-1">Login to Order</span>
+                        </a>
+                    </t>
+                    <t t-else="" t-call="website_sale.shop_product_buttons"/>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="cta_wrapper_public_login_to_order" inherit_id="website_sale.cta_wrapper" priority="60" name="Product CTA Login to Order for Public">
+        <xpath expr="//button[@name='add_to_cart' and @data-action='add_to_cart']" position="replace">
+            <t t-if="request.env.user._is_public()">
+                <a t-att-href="'/b2b/apply'" class="btn tynor-login-order-btn flex-grow-1">
+                    <i class="fa fa-sign-in me-2"/>
+                    Login to Order
+                </a>
+            </t>
+            <t t-else="">
+                <button
+                    name="add_to_cart"
+                    t-attf-class="btn btn-primary flex-grow-1"
+                    data-action="add_to_cart"
+                    data-animation-selector=".o_wsale_product_images"
+                    t-att-data-product-category-id="product.public_categ_ids.ids and product.public_categ_ids.ids[0]"
+                    t-att-data-product-id="product_variant.id"
+                    t-att-data-product-template-id="product.id"
+                    t-att-data-product-type="product.type"
+                    t-att-data-show-quantity="is_view_active('website_sale.product_quantity')"
+                >
+                    <i class="fa fa-shopping-cart me-2"/>
+                    Add to cart
+                </button>
+            </t>
+        </xpath>
+    </template>
+
+    <record id="view_product_template_form_prices" model="ir.ui.view">
+        <field name="name">product.template.form.tynor.prices</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_only_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='list_price']" position="attributes">
+                <attribute name="string">Sale Price (AUD)</attribute>
+            </xpath>
+            <xpath expr="//]" position="after">
+                <label for="tynor_retail_price" id="tynor_retail_price_label"/>
+                <div name="tynor_retail_price_uom">
+                    <field name="tynor_retail_price" class="oe_inline" widget="monetary" options="{'currency_field': 'cost_currency_id','field_digits': True}"/>
+                </div>            
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_product_variant_form_prices" model="ir.ui.view">
+        <field name="name">product.product.form.tynor.prices</field>
+        <field name="model">product.product</field>
+        <field name="inherit_id" ref="product.product_normal_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='lst_price']" position="attributes">
+                <attribute name="string">Sale Price (AUD)</attribute>
+            </xpath>
+            <xpath expr="//field[@name='lst_price']" position="after">
+                <field name="tynor_retail_price" class="oe_inline" widget="monetary" options="{'currency_field': 'currency_id', 'field_digits': True}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

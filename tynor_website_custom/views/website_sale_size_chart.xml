@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template
+        id="tynor_website_product_size_chart_and_bulk_order"
+        inherit_id="website_sale.product"
+        priority="70"
+        name="Tynor Product Size Chart and Bulk Size Order"
+    >
+        <xpath expr="//t[@name='variant_info']" position="before">
+            <div
+                t-if="product.tynor_size_chart_image"
+                class="tynor-size-chart-trigger o_wsale_product_details_content_section mb-3"
+            >
+                <button
+                    type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    data-bs-toggle="modal"
+                    t-att-data-bs-target="'#tynor_size_chart_modal_%s' % product.id"
+                >
+                    <i class="fa fa-ruler me-1"/>
+                    <t t-out="product.tynor_size_chart_title or 'Size Chart'"/>
+                </button>
+                <div
+                    t-att-id="'tynor_size_chart_modal_%s' % product.id"
+                    class="modal fade"
+                    tabindex="-1"
+                    aria-hidden="true"
+                >
+                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" t-out="product.tynor_size_chart_title or 'Size Chart'"/>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
+                            </div>
+                            <div class="modal-body text-center">
+                                <img
+                                    class="img-fluid rounded"
+                                    t-att-src="'/web/image/product.template/%s/tynor_size_chart_image' % product.id"
+                                    t-att-alt="product.tynor_size_chart_title or 'Size Chart'"
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </xpath>
+
+        <xpath expr="//div[@id='o_wsale_product_cta_section']" position="after">
+            <t t-set="tynor_bulk_size_ctx" t-value="product._tynor_get_bulk_size_context()"/>
+            <div
+                t-if="not request.env.user._is_public() and product.tynor_enable_bulk_size_order and tynor_bulk_size_ctx['options']"
+                class="tynor-bulk-size-order o_wsale_product_details_content_section mb-4 js_tynor_bulk_size_order"
+                t-att-data-product-template-id="product.id"
+            >
+                <div class="d-flex flex-wrap justify-content-between gap-2">
+                    <strong>Quick Size Order</strong>
+                    <span class="small text-muted">Enter multiple sizes in one line and add to cart in one click.</span>
+                </div>
+                <div class="tynor-bulk-size-row mt-2">
+                    <t t-foreach="tynor_bulk_size_ctx['options']" t-as="size_opt">
+                        <div class="tynor-bulk-size-cell">
+                            <label class="form-label mb-1" t-out="size_opt['label']"/>
+                            <input
+                                type="number"
+                                min="0"
+                                step="1"
+                                value="0"
+                                class="form-control form-control-sm js_tynor_size_qty"
+                                t-att-data-ptav-id="size_opt['ptav_id']"
+                                t-att-data-size-label="size_opt['label']"
+                            />
+                        </div>
+                    </t>
+                    <div class="tynor-bulk-size-actions">
+                        <button type="button" class="btn btn-primary btn-sm js_tynor_bulk_add">
+                            Add All Sizes
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm js_tynor_bulk_clear">
+                            Clear
+                        </button>
+                    </div>
+                </div>
+                <div class="small text-muted mt-2 js_tynor_bulk_summary">Types: none | Total Qty: 0</div>
+                <div class="small mt-2 js_tynor_bulk_message d-none"/>
+            </div>
+        </xpath>
+    </template>
+</odoo>

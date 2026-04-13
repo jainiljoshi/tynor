@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="tynor_wholesale_banner_block" name="Tynor Wholesale Banner Block">
+        <t t-set="partner" t-value="request.env.user.partner_id"/>
+        <t t-set="is_wholesale_partner" t-value="not request.env.user._is_public() and partner._is_tynor_wholesale_partner()"/>
+        <t t-set="notification_active" t-value="(request.env['ir.config_parameter'].sudo().get_str('tynor.new_wholesaler_notification_active') or 'False') in ('True', 'true', '1')"/>
+        <t t-set="notification_text" t-value="request.env['ir.config_parameter'].sudo().get_str('tynor.new_wholesaler_notification_text') or 'Welcome to our growing wholesale network! A new wholesaler has joined.'"/>
+
+        <div t-if="is_wholesale_partner and notification_active" class="alert mb-3 tynor-wholesale-notification-banner" role="alert" data-tynor-banner="1">
+            <div class="d-flex align-items-start justify-content-between gap-3">
+                <div>
+                    <strong class="d-block">Wholesale Network Update</strong>
+                    <span t-out="notification_text"/>
+                </div>
+                <button type="button" class="btn-close btn-close-white" aria-label="Close" data-tynor-banner-close="1"/>
+            </div>
+        </div>
+
+        <div t-if="is_wholesale_partner" class="tynor-wholesale-welcome-banner rounded p-3 mb-3">
+            <h5 class="mb-1">Welcome back, <t t-out="partner.commercial_company_name or partner.name"/>.</h5>
+            <p class="mb-0 text-muted">Current Pricelist: <strong><t t-out="partner.property_product_pricelist.name or 'Default Pricelist'"/></strong></p>
+        </div>
+    </template>
+
+    <template id="tynor_wholesale_banner_on_wholesale_page" inherit_id="tynor_b2b_wholesale.b2b_landing_page" priority="50" name="Wholesale Banner On Wholesale Page">
+        <xpath expr="//div[@id='wrap']" position="inside">
+            <div class="container pt-3">
+                <t t-call="tynor_website_custom.tynor_wholesale_banner_block"/>
+            </div>
+        </xpath>
+    </template>
+
+    <template id="tynor_wholesale_banner_on_portal_home" inherit_id="portal.portal_my_home" priority="50" name="Wholesale Banner On Portal Home">
+        <xpath expr="//div[hasclass('o_portal_my_home')]" position="inside">
+            <t t-call="tynor_website_custom.tynor_wholesale_banner_block"/>
+        </xpath>
+    </template>
+</odoo>
