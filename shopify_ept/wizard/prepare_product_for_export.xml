@@ -85,7 +85,7 @@
         <field name="binding_view_types">form,list</field>
         <field name="target">new</field>
         <field name="view_id" ref="shopify_ept.export_product_to_shopify_ept"/>
-        <field name="groups_id" eval="[(4, ref('shopify_ept.group_shopify_ept'))]"/>
+        <field name="group_ids" eval="[(4, ref('shopify_ept.group_shopify_ept'))]"/>
     </record>
 
 </odoo>

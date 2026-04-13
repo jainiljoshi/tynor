@@ -18,13 +18,13 @@
                                    readonly="context.get('is_already_instance_created', False)"/>
                         </group>
                         <group>
-                            <field name='shopify_api_key' required="1"
+                            <field name='shopify_api_key'
                                    placeholder="Enter Shopify API Key"
                                    readonly="context.get('is_already_instance_created', False)"/>
-                            <field name='shopify_password' class="o_onboard_password" required="1" password="1"
+                            <field name='shopify_password' class="o_onboard_password" password="1"
                                    placeholder="●●●●●●●●●●●●●●●●●●●●●●●●●"
                                    readonly="context.get('is_already_instance_created', False)" string="Access Token"/>
-                            <field name='shopify_shared_secret' required="1"
+                            <field name='shopify_shared_secret'
                                    placeholder="Enter Shopify Shared Secret"
                                    readonly="context.get('is_already_instance_created', False)"/>
                         </group>

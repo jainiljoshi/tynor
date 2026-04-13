@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tynor_wholesaler_report_user,access.tynor.wholesaler.report.user,model_tynor_wholesaler_report,base.group_user,1,0,0,0
+access_tynor_wholesaler_report_manager,access.tynor.wholesaler.report.manager,model_tynor_wholesaler_report,account.group_account_manager,1,0,0,0
+

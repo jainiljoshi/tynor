@@ -14,7 +14,8 @@
                 <field name="color"/>
                 <templates>
                     <t t-name="card">
-                        <div t-attf-class="#{!selection_mode ? kanban_color(record.color.raw_value) : ''} oe_kanban_global_click record_dashboard_ept">
+                        <!-- <div t-attf-class="#{!selection_mode ? kanban_color(record.color.raw_value) : ''} oe_kanban_global_click record_dashboard_ept"> -->
+                        <div t-attf-class="#{!selection_mode ? 'oe_kanban_color_' + record.color.raw_value : ''} oe_kanban_global_click record_dashboard_ept">    
                             <div class="o_kanban_card_header">
                                 <div class="o_kanban_card_header_title">
                                     <div class="o_primary">

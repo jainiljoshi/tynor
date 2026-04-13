@@ -11,13 +11,13 @@ class ShopifyInstanceConfig(models.TransientModel):
     _description = "Shopify Instance Configuration"
 
     name = fields.Char(help="Any User friendly name to identify the Shopify store")
-    shopify_api_key = fields.Char("API Key", required=True, help="Shopify API Key. You can find "
+    shopify_api_key = fields.Char("API Key", help="Shopify API Key (Client ID). You can find "
                                                                  "it under Shopify store control "
                                                                  "panel.")
-    shopify_password = fields.Char("Password", required=True, help="Shopify API Password. You can "
-                                                                   "find it under Shopify store control panel")
-    shopify_shared_secret = fields.Char("Secret Key", required=True, help="Shopify API Shared Secret. You can find it "
-                                                                          "under Shopify store control panel")
+    shopify_password = fields.Char("Access Token", help="Shopify Admin API access token. Leave blank to "
+                                                        "auto-generate with Client ID and Secret Key.")
+    shopify_shared_secret = fields.Char("Secret Key", help="Shopify API Shared Secret (Client Secret). You can find "
+                                                           "it under Shopify store control panel")
     shopify_host = fields.Char("Host", required=True,
                                help="Add your shopify store URL, for example, https://my-shopify-store.myshopify.com")
     shopify_company_id = fields.Many2one("res.company", string="Instance Company",
@@ -81,19 +81,21 @@ class ShopifyInstanceConfig(models.TransientModel):
         financial_status_obj = self.env["sale.auto.workflow.configuration.ept"]
 
         instance_id = instance_obj.with_context(active_test=False).search(
-            ["|", ("shopify_api_key", "=", self.shopify_api_key),
-             ("shopify_host", "=", self.shopify_host)], limit=1)
+            [("shopify_host", "=", self.shopify_host)], limit=1)
         if instance_id:
             raise UserError(_(
                 "An instance already exists for the given details \nShopify API key : '%s' \nShopify Host : '%s'" % (
                     self.shopify_api_key, self.shopify_host)))
-        if not self.shopify_host.__contains__('myshopify') or not self.shopify_host.__contains__('https'):
+        if not self.shopify_host or not self.shopify_host.__contains__('myshopify'):
             raise UserError(
-                _("A host should contain both 'https' and 'myshopify', for example: 'https://odoo-v17.myshopify.com'. You can refer the host in your Shopify store: Shopify => Settings => Domains"))
+                _("A host should contain 'myshopify', for example: 'odoo-v17.myshopify.com' or 'https://odoo-v17.myshopify.com'. You can refer the host in your Shopify store: Shopify => Settings => Domains"))
 
-        shop_url = instance_obj.prepare_shopify_shop_url(self.shopify_host, self.shopify_api_key, self.shopify_password)
-
-        shopify.ShopifyResource.set_site(shop_url)
+        instance_obj.connect_in_shopify({
+            "shopify_host": self.shopify_host,
+            "shopify_api_key": self.shopify_api_key,
+            "shopify_password": self.shopify_password,
+            "shopify_shared_secret": self.shopify_shared_secret,
+        })
 
         try:
             shop_id = shopify.Shop.current()
@@ -188,7 +190,7 @@ class ShopifyInstanceConfig(models.TransientModel):
         instance_id = context.get("shopify_instance_id")
 
         instance = shopify_instance_obj.browse(instance_id)
-        if instance.shopify_api_key == self.shopify_api_key or instance.shopify_password == self.shopify_password or \
+        if instance.shopify_api_key == self.shopify_api_key and instance.shopify_password == self.shopify_password and \
                 instance.shopify_shared_secret == self.shopify_shared_secret:
             raise UserError(_("Entered credentials are same as previous.\nPlease verify the credentials once."))
 
@@ -407,8 +409,7 @@ class ResConfigSettings(models.TransientModel):
                                                 help="If checked, it will create an individual Company type partner "
                                                      "from the Company name and customer will be created as a "
                                                      "child partner of Company.")
-    shopify_product_uom_id = fields.Many2one('uom.uom', string='Unit of Measure',
-                                             domain="[('category_id.name', '=', 'Weight')]")
+    shopify_product_uom_id = fields.Many2one('uom.uom', string='Unit of Measure')
     use_default_terms_and_condition_of_odoo = fields.Boolean("Use Default Terms & Condition of Odoo",
                                                              config_parameter="shopify_ept.use_default_terms_and_condition_of_odoo",
                                                              help="If checked, it will set the custom note and default terms and condition in order note")

@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tynor_payment_journal_map_user,access.tynor.payment.journal.map.user,model_tynor_payment_journal_map,base.group_user,1,0,0,0
+access_tynor_payment_journal_map_manager,access.tynor.payment.journal.map.manager,model_tynor_payment_journal_map,account.group_account_manager,1,1,1,1
+

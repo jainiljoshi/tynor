@@ -6,6 +6,7 @@ import logging
 
 from calendar import monthrange
 from datetime import date, datetime, timedelta
+from six.moves import urllib
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 from .. import shopify
@@ -168,9 +169,9 @@ class ShopifyInstanceEpt(models.Model):
 
     shopify_order_prefix = fields.Char(size=10, string='Order Prefix',
                                        help="Enter your order prefix")
-    shopify_api_key = fields.Char("API Key", required=True)
-    shopify_password = fields.Char("Password", required=True)
-    shopify_shared_secret = fields.Char("Secret Key", required=True)
+    shopify_api_key = fields.Char("API Key")
+    shopify_password = fields.Char("Access Token")
+    shopify_shared_secret = fields.Char("Secret Key")
     shopify_host = fields.Char("Host", required=True)
     shopify_last_date_customer_import = fields.Datetime(string="Last Customer Import",
                                                         help="it is used to store last import customer date")
@@ -932,34 +933,99 @@ class ShopifyInstanceEpt(models.Model):
 
     def connect_in_shopify(self, vals=False):
         """
-        This method used to connect with Odoo to Shopify.
-        @param vals: Dictionary of api_key and password.
+        This method used to connect with Odoo to Shopify using access token authentication.
+        @param vals: Dictionary of api_key, password, host and secret.
         @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 07/10/2019.
         @change: Maulik Barad on Date 01-Oct-2020.
         """
+        host = False
+        api_key = False
+        password = False
+        shared_secret = False
+
         if vals:
+            host = vals.get("shopify_host")
             api_key = vals.get("shopify_api_key")
             password = vals.get("shopify_password")
-        else:
-            api_key = self.shopify_api_key
-            password = self.shopify_password
+            shared_secret = vals.get("shopify_shared_secret")
 
-        shop_url = self.prepare_shopify_shop_url(self.shopify_host, api_key, password)
+        host = host or self.shopify_host
+        api_key = api_key or self.shopify_api_key
+        password = password or self.shopify_password
+        shared_secret = shared_secret or self.shopify_shared_secret
+
+        if not host:
+            raise UserError(_("Shopify host is required to connect."))
+
+        shop_url = self.prepare_shopify_shop_url(host, api_key, password)
+        access_token = password or self._generate_shopify_access_token(host, api_key, shared_secret)
+        if not access_token:
+            raise UserError(_("Shopify access token is missing. Provide an Access Token or valid Client ID/Secret Key."))
 
         shopify.ShopifyResource.set_site(shop_url)
+        shopify.ShopifyResource.user = None
+        shopify.ShopifyResource.password = None
+        shopify.ShopifyResource.headers["X-Shopify-Access-Token"] = access_token
         return True
 
-    def prepare_shopify_shop_url(self, host, api_key, password):
+    def _generate_shopify_access_token(self, host, api_key, shared_secret):
+        """
+        Generate a Shopify Admin API access token using client credentials.
+        """
+        if not api_key or not shared_secret:
+            return False
+
+        shop = host.strip()
+        if not shop.startswith(("https://", "http://")):
+            shop = "https://%s" % shop
+        parsed_host = urllib.parse.urlparse(shop)
+        if not parsed_host.hostname:
+            raise UserError(_("Invalid Shopify host '%s'.") % host)
+        shop_host = parsed_host.hostname
+        if parsed_host.port:
+            shop_host = "%s:%s" % (shop_host, parsed_host.port)
+
+        url = "https://%s/admin/oauth/access_token" % shop_host
+        payload = urllib.parse.urlencode({
+            "grant_type": "client_credentials",
+            "client_id": api_key,
+            "client_secret": shared_secret,
+        }).encode("utf-8")
+        request = urllib.request.Request(url, payload)
+        request.add_header("Content-Type", "application/x-www-form-urlencoded")
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                response_body = response.read().decode("utf-8")
+        except Exception as error:
+            raise UserError(_("Unable to generate Shopify access token. %s") % error)
+
+        token_response = json.loads(response_body) if response_body else {}
+        access_token = token_response.get("access_token")
+        if not access_token:
+            error_message = token_response.get("error_description") or token_response.get("error") or token_response
+            raise UserError(_("Shopify did not return an access token. %s") % error_message)
+        return access_token
+
+    def prepare_shopify_shop_url(self, host, api_key=False, password=False):
         """ This method is used to prepare a shop URL.
             @return shop_url
             @author: Haresh Mori @Emipro Technologies Pvt. Ltd on date 26 October 2020 .
             Task_id: 167537 - Code refactoring
         """
-        shop = host.split("//")
-        if len(shop) == 2:
-            shop_url = shop[0] + "//" + api_key + ":" + password + "@" + shop[1] + "/admin/api/2025-01"
-        else:
-            shop_url = "https://" + api_key + ":" + password + "@" + shop[0] + "/admin/api/2025-01"
+        if not host:
+            raise UserError(_("Shopify host is required."))
+        prepared_host = host.strip()
+        if not prepared_host.startswith(("https://", "http://")):
+            prepared_host = "https://%s" % prepared_host
+
+        parsed_host = urllib.parse.urlparse(prepared_host)
+        if not parsed_host.hostname:
+            raise UserError(_("Invalid Shopify host '%s'.") % host)
+        scheme = parsed_host.scheme or "https"
+        netloc = parsed_host.hostname
+        if parsed_host.port:
+            netloc = "%s:%s" % (netloc, parsed_host.port)
+        shop_url = "%s://%s/admin/api/2025-01" % (scheme, netloc)
 
         return shop_url
 

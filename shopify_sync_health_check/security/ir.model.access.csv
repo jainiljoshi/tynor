@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_shopify_sync_dashboard_user,access.shopify.sync.dashboard.user,model_shopify_sync_dashboard,base.group_user,1,1,1,1
+access_shopify_sync_sheet_user,access.shopify.sync.sheet.user,model_shopify_sync_sheet,base.group_user,1,1,1,1
+access_shopify_sync_issue_user,access.shopify.sync.issue.user,model_shopify_sync_issue,base.group_user,1,1,1,1
+access_shopify_inventory_kpi_line_user,access.shopify.inventory.kpi.line.user,model_shopify_inventory_kpi_line,base.group_user,1,1,1,1
