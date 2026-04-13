@@ -6,24 +6,67 @@ import { rpc } from '@web/core/network/rpc';
 class TynorBulkSizeOrder extends Interaction {
     static selector = '.js_tynor_bulk_size_order';
     dynamicContent = {
-        '.js_tynor_size_qty': { 't-on-input': this.onQtyInput },
+        '.js_tynor_single_qty': { 't-on-input': this.onQtyInput },
+        '.js_tynor_add_line': { 't-on-click.prevent': this.onAddLine },
         '.js_tynor_bulk_clear': { 't-on-click': this.onClear },
         '.js_tynor_bulk_add': { 't-on-click.prevent': this.locked(this.onAddSizes, true) },
     };
 
     start() {
+        this.pendingLines = new Map();
+        this._onContainerClick = this._onContainerClick.bind(this);
+        this.el.addEventListener('click', this._onContainerClick);
+        this._hideMessage();
+        this._renderPendingLines();
         this._updateSummary();
     }
 
+    destroy() {
+        this.el.removeEventListener('click', this._onContainerClick);
+        super.destroy();
+    }
+
     onQtyInput() {
+        const qtyInput = this.el.querySelector('.js_tynor_single_qty');
+        if (!qtyInput) {
+            return;
+        }
+        const qty = parseInt(qtyInput.value || '1', 10);
+        qtyInput.value = qty > 0 ? qty : 1;
+    }
+
+    onAddLine() {
+        const sizeSelect = this.el.querySelector('.js_tynor_size_select');
+        const qtyInput = this.el.querySelector('.js_tynor_single_qty');
+        if (!sizeSelect || !qtyInput) {
+            this._showMessage('Size controls are unavailable. Please refresh the page.', false);
+            return;
+        }
+
+        const ptavId = parseInt(sizeSelect.value || '0', 10);
+        const qty = parseInt(qtyInput.value || '0', 10);
+        const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+        const sizeLabel = selectedOption?.dataset?.sizeLabel || selectedOption?.textContent?.trim() || 'Size';
+
+        if (!ptavId || !qty || qty < 1) {
+            this._showMessage('Please choose a size and quantity.', false);
+            return;
+        }
+
+        const existingLine = this.pendingLines.get(ptavId);
+        const mergedQty = qty + (existingLine?.qty || 0);
+        this.pendingLines.set(ptavId, { ptav_id: ptavId, qty: mergedQty, label: sizeLabel });
+
+        qtyInput.value = 1;
+        this._hideMessage();
+        this._renderPendingLines();
         this._updateSummary();
     }
 
     onClear() {
-        this.el.querySelectorAll('.js_tynor_size_qty').forEach((input) => {
-            input.value = 0;
-        });
+        this.pendingLines.clear();
         this._hideMessage();
+        this._renderPendingLines();
         this._updateSummary();
     }
 
@@ -66,10 +109,10 @@ class TynorBulkSizeOrder extends Interaction {
         }
 
         if (response?.ok) {
+            this._playCartJumpAnimation(response?.total_added || sizeLines.length, addButton);
             this._showMessage(response.message || 'Sizes added to cart.', true);
-            this.el.querySelectorAll('.js_tynor_size_qty').forEach((input) => {
-                input.value = 0;
-            });
+            this.pendingLines.clear();
+            this._renderPendingLines();
         } else {
             this._showMessage(response?.message || 'Unable to add selected sizes.', false);
         }
@@ -81,13 +124,9 @@ class TynorBulkSizeOrder extends Interaction {
     }
 
     _collectSizeLines() {
-        return Array.from(this.el.querySelectorAll('.js_tynor_size_qty'))
-            .map((input) => {
-                const qty = parseInt(input.value || '0', 10);
-                const ptavId = parseInt(input.dataset.ptavId || '0', 10);
-                return { qty: Number.isNaN(qty) ? 0 : qty, ptav_id: ptavId };
-            })
-            .filter((line) => line.qty > 0 && line.ptav_id);
+        return Array.from(this.pendingLines.values())
+            .map((line) => ({ ptav_id: line.ptav_id, qty: line.qty }))
+            .filter((line) => line.qty > 0 && line.ptav_id > 0);
     }
 
     _collectSelectedPtavs() {
@@ -109,18 +148,45 @@ class TynorBulkSizeOrder extends Interaction {
             return;
         }
 
-        const entries = [];
-        let totalQty = 0;
-        this.el.querySelectorAll('.js_tynor_size_qty').forEach((input) => {
-            const qty = parseInt(input.value || '0', 10);
-            if (qty > 0) {
-                entries.push(`${input.dataset.sizeLabel || 'Size'} x${qty}`);
-                totalQty += qty;
-            }
-        });
+        const entries = Array.from(this.pendingLines.values()).map((line) => `${line.label} x${line.qty}`);
+        const totalQty = Array.from(this.pendingLines.values()).reduce((acc, line) => acc + line.qty, 0);
 
         const typesText = entries.length ? entries.join(' | ') : 'none';
         summaryEl.textContent = `Types: ${typesText} | Total Qty: ${totalQty}`;
+    }
+
+    _renderPendingLines() {
+        const listEl = this.el.querySelector('.js_tynor_bulk_selected_list');
+        if (!listEl) {
+            return;
+        }
+        if (!this.pendingLines.size) {
+            listEl.innerHTML = '<span class="text-muted small">No sizes added yet.</span>';
+            return;
+        }
+
+        const lineHtml = Array.from(this.pendingLines.values())
+            .map(
+                (line) =>
+                    `<span class="badge rounded-pill text-bg-light border me-1 mb-1">${line.label} x${line.qty} <button type="button" class="btn-close btn-close-sm ms-1 js_tynor_remove_line" data-ptav-id="${line.ptav_id}" aria-label="Remove"></button></span>`
+            )
+            .join('');
+
+        listEl.innerHTML = lineHtml;
+    }
+
+    _onContainerClick(ev) {
+        const removeBtn = ev.target.closest('.js_tynor_remove_line');
+        if (!removeBtn) {
+            return;
+        }
+        const ptavId = parseInt(removeBtn.dataset.ptavId || '0', 10);
+        if (!ptavId) {
+            return;
+        }
+        this.pendingLines.delete(ptavId);
+        this._renderPendingLines();
+        this._updateSummary();
     }
 
     _showMessage(message, isSuccess) {
@@ -154,6 +220,51 @@ class TynorBulkSizeOrder extends Interaction {
             }
         });
     }
+
+    _playCartJumpAnimation(addedQty, sourceEl) {
+        if (!sourceEl) {
+            return;
+        }
+        const cartEl =
+            document.querySelector('.o_wsale_my_cart') ||
+            document.querySelector('a[href*="/shop/cart"]') ||
+            document.querySelector('.my_cart_quantity');
+        if (!cartEl) {
+            return;
+        }
+
+        const from = sourceEl.getBoundingClientRect();
+        const to = cartEl.getBoundingClientRect();
+        const bubble = document.createElement('div');
+        bubble.className = 'tynor-cart-jump-bubble';
+        bubble.textContent = `+${addedQty}`;
+        bubble.style.left = `${from.left + from.width / 2}px`;
+        bubble.style.top = `${from.top + from.height / 2}px`;
+        document.body.appendChild(bubble);
+
+        const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+        const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+        bubble.animate(
+            [
+                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+                { transform: `translate(${dx - 20}px, ${dy - 20}px) scale(0.55)`, opacity: 0.25 },
+            ],
+            { duration: 650, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' }
+        ).onfinish = () => {
+            bubble.remove();
+        };
+    }
+}
+
+class TynorSizeChartModal extends Interaction {
+    static selector = '.tynor-size-chart-modal';
+
+    start() {
+        if (this.el.parentElement !== document.body) {
+            document.body.appendChild(this.el);
+        }
+    }
 }
 
 registry.category('public.interactions').add('tynor_website_custom.bulk_size_order', TynorBulkSizeOrder);
+registry.category('public.interactions').add('tynor_website_custom.size_chart_modal', TynorSizeChartModal);

@@ -22,11 +22,11 @@
                 </button>
                 <div
                     t-att-id="'tynor_size_chart_modal_%s' % product.id"
-                    class="modal fade"
+                    class="modal fade tynor-size-chart-modal"
                     tabindex="-1"
                     aria-hidden="true"
                 >
-                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-dialog modal-dialog-centered tynor-size-chart-dialog">
                         <div class="modal-content">
                             <div class="modal-header">
                                 <h5 class="modal-title" t-out="product.tynor_size_chart_title or 'Size Chart'"/>
@@ -54,33 +54,49 @@
             >
                 <div class="d-flex flex-wrap justify-content-between gap-2">
                     <strong>Quick Size Order</strong>
-                    <span class="small text-muted">Enter multiple sizes in one line and add to cart in one click.</span>
+                    <span class="small text-muted">Pick a size, set quantity, add lines, then add all to cart.</span>
                 </div>
-                <div class="tynor-bulk-size-row mt-2">
-                    <t t-foreach="tynor_bulk_size_ctx['options']" t-as="size_opt">
-                        <div class="tynor-bulk-size-cell">
-                            <label class="form-label mb-1" t-out="size_opt['label']"/>
+                <div class="small text-muted mt-2 js_tynor_bulk_summary">Types: none | Total Qty: 0</div>
+                <div class="tynor-bulk-selected-lines mt-2 js_tynor_bulk_selected_list">
+                    <span class="text-muted small">No sizes added yet.</span>
+                </div>
+                <div class="tynor-bulk-builder mt-3">
+                    <div class="row g-2">
+                        <div class="col-12 col-sm-7">
+                            <label class="form-label mb-1">Size</label>
+                            <select class="form-select form-select-sm js_tynor_size_select">
+                                <t t-foreach="tynor_bulk_size_ctx['options']" t-as="size_opt">
+                                    <option t-att-value="size_opt['ptav_id']" t-att-data-size-label="size_opt['label']">
+                                        <t t-out="size_opt['label']"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-12 col-sm-5">
+                            <label class="form-label mb-1">Quantity</label>
                             <input
                                 type="number"
-                                min="0"
+                                min="1"
                                 step="1"
-                                value="0"
-                                class="form-control form-control-sm js_tynor_size_qty"
-                                t-att-data-ptav-id="size_opt['ptav_id']"
-                                t-att-data-size-label="size_opt['label']"
+                                value="1"
+                                class="form-control form-control-sm js_tynor_single_qty"
                             />
                         </div>
-                    </t>
-                    <div class="tynor-bulk-size-actions">
-                        <button type="button" class="btn btn-primary btn-sm js_tynor_bulk_add">
-                            Add All Sizes
-                        </button>
-                        <button type="button" class="btn btn-outline-secondary btn-sm js_tynor_bulk_clear">
-                            Clear
+                    </div>
+                    <div class="tynor-bulk-builder-actions mt-2">
+                        <button type="button" class="btn btn-outline-primary btn-sm js_tynor_add_line">
+                            Add Size Line
                         </button>
                     </div>
                 </div>
-                <div class="small text-muted mt-2 js_tynor_bulk_summary">Types: none | Total Qty: 0</div>
+                <div class="tynor-bulk-size-actions mt-3">
+                    <button type="button" class="btn btn-primary btn-sm js_tynor_bulk_add">
+                        Add to Cart
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm js_tynor_bulk_clear">
+                            Clear
+                    </button>
+                </div>
                 <div class="small mt-2 js_tynor_bulk_message d-none"/>
             </div>
         </xpath>

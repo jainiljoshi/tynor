@@ -112,6 +112,37 @@
     min-width: 140px;
 }
 
+.tynor-size-chart-modal {
+    z-index: 2100 !important;
+}
+
+.modal-backdrop.show {
+    z-index: 2090;
+}
+
+.tynor-size-chart-dialog {
+    width: calc(100vw - 1rem);
+    max-width: 760px;
+    margin: 0.5rem auto;
+}
+
+.tynor-size-chart-modal .modal-content {
+    border-radius: 0.75rem;
+}
+
+.tynor-size-chart-modal .modal-body {
+    max-height: 78vh;
+    overflow: auto;
+    padding: 0.75rem;
+}
+
+.tynor-size-chart-modal .modal-body img {
+    width: 100%;
+    height: auto;
+    max-height: 72vh;
+    object-fit: contain;
+}
+
 .tynor-bulk-size-order {
     border: 1px solid #e2e8f0;
     border-radius: 0.5rem;
@@ -119,24 +150,46 @@
     background: #f8fafc;
 }
 
-.tynor-bulk-size-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.625rem;
-    align-items: flex-end;
+.tynor-bulk-selected-lines {
+    min-height: 2rem;
 }
 
-.tynor-bulk-size-cell {
-    min-width: 88px;
-    flex: 0 0 auto;
+.tynor-bulk-selected-lines .badge {
+    font-weight: 500;
+    color: #334155;
 }
 
-.tynor-bulk-size-cell input {
-    width: 88px;
+.tynor-bulk-selected-lines .btn-close {
+    float: none;
+    vertical-align: middle;
+    transform: scale(0.65);
 }
 
 .tynor-bulk-size-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+}
+
+.tynor-bulk-builder-actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.tynor-cart-jump-bubble {
+    position: fixed;
+    z-index: 2200;
+    transform: translate(-50%, -50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 999px;
+    background: #7B3FA0;
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.25);
 }
