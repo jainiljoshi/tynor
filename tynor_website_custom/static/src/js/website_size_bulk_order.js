@@ -6,6 +6,7 @@ import { rpc } from '@web/core/network/rpc';
 class TynorBulkSizeOrder extends Interaction {
     static selector = '.js_tynor_bulk_size_order';
     dynamicContent = {
+        '.js_tynor_size_select': { 't-on-change': this.onSizeChange },
         '.js_tynor_single_qty': { 't-on-input': this.onQtyInput },
         '.js_tynor_add_line': { 't-on-click.prevent': this.onAddLine },
         '.js_tynor_bulk_clear': { 't-on-click': this.onClear },
@@ -17,6 +18,7 @@ class TynorBulkSizeOrder extends Interaction {
         this._onContainerClick = this._onContainerClick.bind(this);
         this.el.addEventListener('click', this._onContainerClick);
         this._hideMessage();
+        this._updateSelectedPriceDisplay();
         this._renderPendingLines();
         this._updateSummary();
     }
@@ -35,6 +37,10 @@ class TynorBulkSizeOrder extends Interaction {
         qtyInput.value = qty > 0 ? qty : 1;
     }
 
+    onSizeChange() {
+        this._updateSelectedPriceDisplay();
+    }
+
     onAddLine() {
         const sizeSelect = this.el.querySelector('.js_tynor_size_select');
         const qtyInput = this.el.querySelector('.js_tynor_single_qty');
@@ -47,6 +53,8 @@ class TynorBulkSizeOrder extends Interaction {
         const qty = parseInt(qtyInput.value || '0', 10);
         const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
         const sizeLabel = selectedOption?.dataset?.sizeLabel || selectedOption?.textContent?.trim() || 'Size';
+        const unitPrice = parseFloat(selectedOption?.dataset?.price || '0') || 0;
+        const unitPriceDisplay = selectedOption?.dataset?.priceDisplay || this._formatPrice(unitPrice);
 
         if (!ptavId || !qty || qty < 1) {
             this._showMessage('Please choose a size and quantity.', false);
@@ -55,7 +63,13 @@ class TynorBulkSizeOrder extends Interaction {
 
         const existingLine = this.pendingLines.get(ptavId);
         const mergedQty = qty + (existingLine?.qty || 0);
-        this.pendingLines.set(ptavId, { ptav_id: ptavId, qty: mergedQty, label: sizeLabel });
+        this.pendingLines.set(ptavId, {
+            ptav_id: ptavId,
+            qty: mergedQty,
+            label: sizeLabel,
+            unit_price: unitPrice,
+            unit_price_display: unitPriceDisplay,
+        });
 
         qtyInput.value = 1;
         this._hideMessage();
@@ -150,9 +164,13 @@ class TynorBulkSizeOrder extends Interaction {
 
         const entries = Array.from(this.pendingLines.values()).map((line) => `${line.label} x${line.qty}`);
         const totalQty = Array.from(this.pendingLines.values()).reduce((acc, line) => acc + line.qty, 0);
+        const totalAmount = Array.from(this.pendingLines.values()).reduce(
+            (acc, line) => acc + ((line.unit_price || 0) * line.qty),
+            0
+        );
 
         const typesText = entries.length ? entries.join(' | ') : 'none';
-        summaryEl.textContent = `Types: ${typesText} | Total Qty: ${totalQty}`;
+        summaryEl.textContent = `Types: ${typesText} | Total Qty: ${totalQty} | Total: ${this._formatPrice(totalAmount)}`;
     }
 
     _renderPendingLines() {
@@ -168,7 +186,7 @@ class TynorBulkSizeOrder extends Interaction {
         const lineHtml = Array.from(this.pendingLines.values())
             .map(
                 (line) =>
-                    `<span class="badge rounded-pill text-bg-light border me-1 mb-1">${line.label} x${line.qty} <button type="button" class="btn-close btn-close-sm ms-1 js_tynor_remove_line" data-ptav-id="${line.ptav_id}" aria-label="Remove"></button></span>`
+                    `<span class="badge rounded-pill text-bg-light border me-1 mb-1">${line.label} x${line.qty} @ ${line.unit_price_display} = ${this._formatPrice((line.unit_price || 0) * line.qty)} <button type="button" class="btn-close btn-close-sm ms-1 js_tynor_remove_line" data-ptav-id="${line.ptav_id}" aria-label="Remove"></button></span>`
             )
             .join('');
 
@@ -219,6 +237,26 @@ class TynorBulkSizeOrder extends Interaction {
                 el.classList.add('d-none');
             }
         });
+    }
+
+    _updateSelectedPriceDisplay() {
+        const priceEl = this.el.querySelector('.js_tynor_single_price');
+        const sizeSelect = this.el.querySelector('.js_tynor_size_select');
+        if (!priceEl || !sizeSelect) {
+            return;
+        }
+        const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
+        const rawPrice = parseFloat(selectedOption?.dataset?.price || '0') || 0;
+        priceEl.textContent = selectedOption?.dataset?.priceDisplay || this._formatPrice(rawPrice);
+    }
+
+    _formatPrice(amount) {
+        const value = Number.isFinite(amount) ? amount : 0;
+        const symbol = this.el.dataset.currencySymbol || '$';
+        const position = this.el.dataset.currencyPosition || 'before';
+        const decimals = parseInt(this.el.dataset.currencyDecimals || '2', 10);
+        const fixed = value.toFixed(Number.isNaN(decimals) ? 2 : decimals);
+        return position === 'after' ? `${fixed} ${symbol}` : `${symbol}${fixed}`;
     }
 
     _playCartJumpAnimation(addedQty, sourceEl) {

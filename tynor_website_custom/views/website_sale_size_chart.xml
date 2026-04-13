@@ -51,12 +51,15 @@
                 t-if="not request.env.user._is_public() and product.tynor_enable_bulk_size_order and tynor_bulk_size_ctx['options']"
                 class="tynor-bulk-size-order o_wsale_product_details_content_section mb-4 js_tynor_bulk_size_order"
                 t-att-data-product-template-id="product.id"
+                t-att-data-currency-symbol="tynor_bulk_size_ctx.get('currency_symbol')"
+                t-att-data-currency-position="tynor_bulk_size_ctx.get('currency_position')"
+                t-att-data-currency-decimals="tynor_bulk_size_ctx.get('currency_decimals')"
             >
                 <div class="d-flex flex-wrap justify-content-between gap-2">
                     <strong>Quick Size Order</strong>
                     <span class="small text-muted">Pick a size, set quantity, add lines, then add all to cart.</span>
                 </div>
-                <div class="small text-muted mt-2 js_tynor_bulk_summary">Types: none | Total Qty: 0</div>
+                <div class="small text-muted mt-2 js_tynor_bulk_summary">Types: none | Total Qty: 0 | Total: 0</div>
                 <div class="tynor-bulk-selected-lines mt-2 js_tynor_bulk_selected_list">
                     <span class="text-muted small">No sizes added yet.</span>
                 </div>
@@ -66,13 +69,18 @@
                             <label class="form-label mb-1">Size</label>
                             <select class="form-select form-select-sm js_tynor_size_select">
                                 <t t-foreach="tynor_bulk_size_ctx['options']" t-as="size_opt">
-                                    <option t-att-value="size_opt['ptav_id']" t-att-data-size-label="size_opt['label']">
+                                    <option
+                                        t-att-value="size_opt['ptav_id']"
+                                        t-att-data-size-label="size_opt['label']"
+                                        t-att-data-price="size_opt.get('price', 0.0)"
+                                        t-att-data-price-display="size_opt.get('price_display', '')"
+                                    >
                                         <t t-out="size_opt['label']"/>
                                     </option>
                                 </t>
                             </select>
                         </div>
-                        <div class="col-12 col-sm-5">
+                        <div class="col-6 col-sm-3">
                             <label class="form-label mb-1">Quantity</label>
                             <input
                                 type="number"
@@ -81,6 +89,12 @@
                                 value="1"
                                 class="form-control form-control-sm js_tynor_single_qty"
                             />
+                        </div>
+                        <div class="col-6 col-sm-2">
+                            <label class="form-label mb-1">Price</label>
+                            <div class="tynor-single-price js_tynor_single_price">
+                                <t t-out="tynor_bulk_size_ctx['options'][0].get('price_display', '')"/>
+                            </div>
                         </div>
                     </div>
                     <div class="tynor-bulk-builder-actions mt-2">
