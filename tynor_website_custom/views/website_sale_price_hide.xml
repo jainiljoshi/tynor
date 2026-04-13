@@ -86,10 +86,10 @@
             <xpath expr="//field[@name='list_price']" position="attributes">
                 <attribute name="string">Sale Price (AUD)</attribute>
             </xpath>
-            <xpath expr="//]" position="after">
+            <xpath expr="//field[@name='list_price']" position="after">
                 <label for="tynor_retail_price" id="tynor_retail_price_label"/>
                 <div name="tynor_retail_price_uom">
-                    <field name="tynor_retail_price" class="oe_inline" widget="monetary" options="{'currency_field': 'cost_currency_id','field_digits': True}"/>
+                    <field name="tynor_retail_price" class="oe_inline" widget="monetary" options="{'currency_field': 'currency_id','field_digits': True}"/>
                 </div>            
             </xpath>
         </field>
