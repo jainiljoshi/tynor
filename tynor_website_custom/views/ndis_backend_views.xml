@@ -83,5 +83,5 @@
         <field name="search_view_id" ref="view_tynor_ndis_order_search"/>
     </record>
 
-    <menuitem id="menu_tynor_ndis_order" name="NDIS Orders" action="action_tynor_ndis_order" sequence="20"/>
+    <menuitem id="menu_tynor_ndis_order" name="NDIS Orders" action="action_tynor_ndis_order" sequence="20" active="False"/>
 </odoo>

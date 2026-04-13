@@ -48,7 +48,7 @@
 
     <template id="navbar_shop_by_category_megamenu" inherit_id="website.navbar_nav" priority="40" name="Navbar Shop by Category Mega Menu">
         <xpath expr="//ul" position="inside">
-            <li class="nav-item dropdown d-none d-lg-block tynor-shop-category-mega" role="none">
+            <li class="nav-item dropdown d-none tynor-shop-category-mega" role="none">
                 <a href="/#shop-by-category-section" class="nav-link" role="menuitem">
                     Shop by Category
                 </a>

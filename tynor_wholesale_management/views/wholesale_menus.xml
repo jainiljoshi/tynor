@@ -25,6 +25,15 @@
             <field name="context">{}</field>
         </record>
 
+        <!-- Action: Wholesaler Contacts -->
+        <record id="action_wholesaler_contacts" model="ir.actions.act_window">
+            <field name="name">Wholesaler Contacts</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">['|', ('category_id.name', '=', 'Wholesale'), ('parent_id.category_id.name', '=', 'Wholesale')]</field>
+            <field name="context">{}</field>
+        </record>
+
         <!-- Action: Wholesale Orders -->
         <record id="action_wholesale_orders" model="ir.actions.act_window">
             <field name="name">Wholesale Orders</field>
@@ -36,8 +45,8 @@
 
         <!-- Top Level Menu -->
         <menuitem id="menu_wholesale_root"
-                  name="Wholesale"
-                  web_icon="tynor_wholesale_management,static/description/icon.png"
+                  name="Payment Summary"
+                  web_icon="account,static/description/icon.png"
                   groups="group_wholesale_manager"
                   sequence="25"/>
                   
@@ -49,16 +58,22 @@
                   sequence="1"/>
 
         <menuitem id="menu_wholesale_customers"
-                  name="Wholesalers"
+                  name="Payment Summary"
                   parent="menu_wholesale_root"
                   action="action_wholesale_partners"
                   sequence="2"/>
+
+        <menuitem id="menu_wholesaler_contacts"
+                  name="Wholesaler Contacts"
+                  parent="menu_wholesale_root"
+                  action="action_wholesaler_contacts"
+                  sequence="3"/>
 
         <menuitem id="menu_wholesale_orders"
                   name="Orders"
                   parent="menu_wholesale_root"
                   action="action_wholesale_orders"
-                  sequence="3"/>
+                  sequence="4"/>
 
     </data>
 </odoo>

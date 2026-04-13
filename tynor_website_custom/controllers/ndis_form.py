@@ -4,7 +4,7 @@ from odoo.http import request
 
 class TynorNdisFormController(http.Controller):
     def _is_ndis_enabled(self):
-        return request.env["ir.config_parameter"].sudo().get_param("tynor.ndis_enabled", default="1") == "1"
+        return request.env["ir.config_parameter"].sudo().get_param("tynor.ndis_enabled", default="0") == "1"
 
     @http.route("/ndis", type="http", auth="public", website=True)
     def ndis_page(self, **kwargs):

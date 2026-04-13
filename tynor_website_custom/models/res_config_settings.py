@@ -32,7 +32,7 @@ class ResConfigSettings(models.TransientModel):
     x_tynor_ndis_enabled = fields.Boolean(
         string="Enable NDIS Website Form",
         config_parameter="tynor.ndis_enabled",
-        default=True,
+        default=False,
     )
 
     def set_values(self):
