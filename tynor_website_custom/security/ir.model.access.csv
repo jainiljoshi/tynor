@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_tynor_ndis_order_user_read,access.tynor.ndis.order.user.read,model_tynor_ndis_order,base.group_user,1,0,0,0
+access_tynor_ndis_order_sales,access.tynor.ndis.order.sales,model_tynor_ndis_order,sales_team.group_sale_salesman,1,1,1,1
+access_tynor_ndis_order_wholesale_manager,access.tynor.ndis.order.wholesale.manager,model_tynor_ndis_order,tynor_wholesale_management.group_wholesale_manager,1,1,1,1
