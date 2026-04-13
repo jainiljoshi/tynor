@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="custom_hide_pricelist" inherit_id="website_sale.pricelist_list">
+        <xpath expr="//div[contains(@t-attf-class, 'o_pricelist_dropdown')]" position="attributes">
+            <attribute name="t-attf-class">o_pricelist_dropdown dropdown d-none</attribute>
+        </xpath>
+    </template>
+</odoo>

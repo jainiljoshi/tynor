@@ -151,6 +151,59 @@
             <span>GST</span>
         </xpath>
 
+        <!--  <xpath expr="//th[@name='th_priceunit']" position="after">
+            <th name="th_tynor_retail" class="text-end text-nowrap">Retail Price</th>
+            <th name="th_tynor_discount_amt" class="text-end text-nowrap">Discount</th>
+        </xpath> 
+
+        <xpath expr="//t[@t-set='section_name_colspan']" position="replace">
+            <t
+                t-set="section_name_colspan"
+                t-value="5 + (1 if display_discount else 0) + (1 if display_taxes else 0)"
+            />
+        </xpath>
+
+        <xpath expr="//td[@name='td_combo_price']" position="attributes">
+            <attribute name="t-att-colspan">4 + (1 if display_discount else 0) + (1 if display_taxes else 0)</attribute>
+        </xpath>
+
+        <xpath expr="//td[@name='td_product_priceunit']" position="after">
+            <td name="td_tynor_product_retail" class="text-end text-nowrap">
+                <span
+                    t-if="not collapse_prices"
+                    t-out="line.product_id.lst_price"
+                    t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"
+                />
+            </td>
+            <td name="td_tynor_product_discount_amt" class="text-end text-nowrap">
+                <t t-if="not collapse_prices">
+                    <t t-set="retail_price" t-value="line.product_id.lst_price or line.price_unit"/>
+                    <t t-set="discount_amt" t-value="max(retail_price - line.price_unit, 0.0)"/>
+                    <t t-set="discount_pct" t-value="retail_price and ((discount_amt / retail_price) * 100.0) or 0.0"/>
+                    <span
+                        t-out="discount_amt"
+                        t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"
+                    />
+                    <t t-if="discount_amt &gt; 0"> (<span t-out="'%.0f' % discount_pct"/>%)</t>
+                </t>
+            </td>
+        </xpath>
+
+        <xpath expr="//td[@name='td_section_group_priceunit']" position="after">
+            <td name="td_tynor_section_group_retail" class="text-end text-nowrap">
+                <span
+                    t-out="section_line['price_subtotal']"
+                    t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"
+                />
+            </td>
+            <td name="td_tynor_section_group_discount_amt" class="text-end text-nowrap">
+                <span
+                    t-out="0.0"
+                    t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"
+                />
+            </td>
+        </xpath>  -->
+
         <xpath expr="//td[@name='td_product_name']/span[@t-field='line.name']" position="before">
             <t t-if="(not line.display_type or line.display_type == 'product') and line.product_id">
                 <img
