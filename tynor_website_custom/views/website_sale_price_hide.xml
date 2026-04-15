@@ -60,20 +60,34 @@
                 </a>
             </t>
             <t t-else="">
-                <button
-                    name="add_to_cart"
-                    t-attf-class="btn btn-primary flex-grow-1"
-                    data-action="add_to_cart"
-                    data-animation-selector=".o_wsale_product_images"
-                    t-att-data-product-category-id="product.public_categ_ids.ids and product.public_categ_ids.ids[0]"
-                    t-att-data-product-id="product_variant.id"
-                    t-att-data-product-template-id="product.id"
-                    t-att-data-product-type="product.type"
-                    t-att-data-show-quantity="is_view_active('website_sale.product_quantity')"
-                >
-                    <i class="fa fa-shopping-cart me-2"/>
-                    Add to cart
-                </button>
+                <t t-set="tynor_bulk_size_ctx" t-value="product._tynor_get_bulk_size_context()"/>
+                <t t-if="product.tynor_enable_bulk_size_order and tynor_bulk_size_ctx['options']">
+                    <button
+                        type="button"
+                        class="btn btn-primary flex-grow-1 js_tynor_open_bulk_dialog"
+                        data-bs-toggle="modal"
+                        data-bs-target="#tynor_bulk_order_modal"
+                    >
+                        <i class="fa fa-shopping-cart me-2"/>
+                        Add to cart
+                    </button>
+                </t>
+                <t t-else="">
+                    <button
+                        name="add_to_cart"
+                        t-attf-class="btn btn-primary flex-grow-1"
+                        data-action="add_to_cart"
+                        data-animation-selector=".o_wsale_product_images"
+                        t-att-data-product-category-id="product.public_categ_ids.ids and product.public_categ_ids.ids[0]"
+                        t-att-data-product-id="product_variant.id"
+                        t-att-data-product-template-id="product.id"
+                        t-att-data-product-type="product.type"
+                        t-att-data-show-quantity="is_view_active('website_sale.product_quantity')"
+                    >
+                        <i class="fa fa-shopping-cart me-2"/>
+                        Add to cart
+                    </button>
+                </t>
             </t>
         </xpath>
     </template>

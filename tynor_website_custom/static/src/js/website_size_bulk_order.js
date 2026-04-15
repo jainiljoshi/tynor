@@ -6,99 +6,63 @@ import { rpc } from '@web/core/network/rpc';
 class TynorBulkSizeOrder extends Interaction {
     static selector = '.js_tynor_bulk_size_order';
     dynamicContent = {
-        '.js_tynor_size_select': { 't-on-change': this.onSizeChange },
-        '.js_tynor_single_qty': { 't-on-input': this.onQtyInput },
-        '.js_tynor_add_line': { 't-on-click.prevent': this.onAddLine },
+        '.js_tynor_size_qty': { 't-on-input': this.onQtyInput },
         '.js_tynor_bulk_clear': { 't-on-click': this.onClear },
-        '.js_tynor_bulk_add': { 't-on-click.prevent': this.locked(this.onAddSizes, true) },
+        '.js_tynor_bulk_add_modal': { 't-on-click.prevent': this.locked(this.onAddSizes, true) },
     };
 
     start() {
-        this.pendingLines = new Map();
-        this._onContainerClick = this._onContainerClick.bind(this);
-        this.el.addEventListener('click', this._onContainerClick);
+        this.modalEl = document.getElementById('tynor_bulk_order_modal');
+        this._onModalShow = this._onModalShow.bind(this);
+        if (this.modalEl) {
+            this.modalEl.addEventListener('show.bs.modal', this._onModalShow);
+        }
         this._hideMessage();
-        this._updateSelectedPriceDisplay();
-        this._renderPendingLines();
         this._updateSummary();
     }
 
     destroy() {
-        this.el.removeEventListener('click', this._onContainerClick);
+        if (this.modalEl) {
+            this.modalEl.removeEventListener('show.bs.modal', this._onModalShow);
+        }
         super.destroy();
     }
 
-    onQtyInput() {
-        const qtyInput = this.el.querySelector('.js_tynor_single_qty');
-        if (!qtyInput) {
-            return;
-        }
-        const qty = parseInt(qtyInput.value || '1', 10);
-        qtyInput.value = qty > 0 ? qty : 1;
+    async _onModalShow() {
+        this.onClear();
+        await this._refreshRowPrices();
     }
 
-    onSizeChange() {
-        this._updateSelectedPriceDisplay();
-    }
-
-    onAddLine() {
-        const sizeSelect = this.el.querySelector('.js_tynor_size_select');
-        const qtyInput = this.el.querySelector('.js_tynor_single_qty');
-        if (!sizeSelect || !qtyInput) {
-            this._showMessage('Size controls are unavailable. Please refresh the page.', false);
-            return;
-        }
-
-        const ptavId = parseInt(sizeSelect.value || '0', 10);
-        const qty = parseInt(qtyInput.value || '0', 10);
-        const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
-        const sizeLabel = selectedOption?.dataset?.sizeLabel || selectedOption?.textContent?.trim() || 'Size';
-        const unitPrice = parseFloat(selectedOption?.dataset?.price || '0') || 0;
-        const unitPriceDisplay = selectedOption?.dataset?.priceDisplay || this._formatPrice(unitPrice);
-
-        if (!ptavId || !qty || qty < 1) {
-            this._showMessage('Please choose a size and quantity.', false);
-            return;
-        }
-
-        const existingLine = this.pendingLines.get(ptavId);
-        const mergedQty = qty + (existingLine?.qty || 0);
-        this.pendingLines.set(ptavId, {
-            ptav_id: ptavId,
-            qty: mergedQty,
-            label: sizeLabel,
-            unit_price: unitPrice,
-            unit_price_display: unitPriceDisplay,
-        });
-
-        qtyInput.value = 1;
-        this._hideMessage();
-        this._renderPendingLines();
+    onQtyInput(ev) {
+        const input = ev.currentTarget;
+        const qty = parseInt(input.value || '0', 10);
+        input.value = qty > 0 ? qty : 0;
         this._updateSummary();
     }
 
     onClear() {
-        this.pendingLines.clear();
+        this.el.querySelectorAll('.js_tynor_size_qty').forEach((input) => {
+            input.value = 0;
+        });
         this._hideMessage();
-        this._renderPendingLines();
         this._updateSummary();
     }
 
     async onAddSizes() {
-        const addButton = this.el.querySelector('.js_tynor_bulk_add');
+        const addButton = this.el.querySelector('.js_tynor_bulk_add_modal');
         const sizeLines = this._collectSizeLines();
         if (!sizeLines.length) {
             this._showMessage('Please enter quantity for at least one size.', false);
             return;
         }
 
-        const selectedPtavIds = this._collectSelectedPtavs();
-        const productTemplateId = parseInt(this.el.dataset.productTemplateId);
+        const productTemplateId = parseInt(this.el.dataset.productTemplateId || '0', 10);
         if (!productTemplateId) {
-            this._showMessage('Product information is incomplete. Please refresh the page.', false);
+            this._showMessage('Product information is incomplete. Please refresh and try again.', false);
             return;
         }
 
+        const selectedPtavIds = this._collectSelectedPtavs();
         if (addButton) {
             addButton.setAttribute('disabled', 'disabled');
         }
@@ -110,7 +74,7 @@ class TynorBulkSizeOrder extends Interaction {
                 selected_ptav_ids: selectedPtavIds,
                 size_lines: sizeLines,
             }));
-        } catch (error) {
+        } catch (_error) {
             this._showMessage('Could not add sizes right now. Please try again.', false);
             if (addButton) {
                 addButton.removeAttribute('disabled');
@@ -123,24 +87,65 @@ class TynorBulkSizeOrder extends Interaction {
         }
 
         if (response?.ok) {
-            this._playCartJumpAnimation(response?.total_added || sizeLines.length, addButton);
             this._showMessage(response.message || 'Sizes added to cart.', true);
-            this.pendingLines.clear();
-            this._renderPendingLines();
+            this.onClear();
+            if (this.modalEl && window.bootstrap?.Modal) {
+                window.bootstrap.Modal.getOrCreateInstance(this.modalEl).hide();
+            }
         } else {
             this._showMessage(response?.message || 'Unable to add selected sizes.', false);
         }
 
-        this._updateSummary();
         if (addButton) {
             addButton.removeAttribute('disabled');
         }
     }
 
+    async _refreshRowPrices() {
+        const productTemplateId = parseInt(this.el.dataset.productTemplateId || '0', 10);
+        if (!productTemplateId) {
+            return;
+        }
+
+        const selectedPtavIds = this._collectSelectedPtavs();
+        let response;
+        try {
+            response = await this.waitFor(rpc('/shop/tynor/bulk_size_pricing', {
+                product_template_id: productTemplateId,
+                selected_ptav_ids: selectedPtavIds,
+            }));
+        } catch (_error) {
+            this._showMessage('Could not refresh prices. Using previous values.', false);
+            return;
+        }
+
+        if (!response?.ok || !Array.isArray(response?.rows)) {
+            this._showMessage(response?.message || 'Could not refresh prices.', false);
+            return;
+        }
+
+        const rowMap = new Map(response.rows.map((row) => [row.ptav_id, row]));
+        this.el.querySelectorAll('.js_tynor_size_price').forEach((priceCell) => {
+            const ptavId = parseInt(priceCell.dataset.ptavId || '0', 10);
+            const row = rowMap.get(ptavId);
+            if (!row) {
+                priceCell.textContent = '-';
+                priceCell.dataset.unitPrice = '0';
+                return;
+            }
+            priceCell.textContent = row.price_display || this._formatPrice(row.unit_price || 0);
+            priceCell.dataset.unitPrice = String(row.unit_price || 0);
+        });
+        this._updateSummary();
+    }
+
     _collectSizeLines() {
-        return Array.from(this.pendingLines.values())
-            .map((line) => ({ ptav_id: line.ptav_id, qty: line.qty }))
-            .filter((line) => line.qty > 0 && line.ptav_id > 0);
+        return Array.from(this.el.querySelectorAll('.js_tynor_size_qty'))
+            .map((input) => ({
+                ptav_id: parseInt(input.dataset.ptavId || '0', 10),
+                qty: parseInt(input.value || '0', 10),
+            }))
+            .filter((line) => line.ptav_id > 0 && line.qty > 0);
     }
 
     _collectSelectedPtavs() {
@@ -162,49 +167,24 @@ class TynorBulkSizeOrder extends Interaction {
             return;
         }
 
-        const entries = Array.from(this.pendingLines.values()).map((line) => `${line.label} x${line.qty}`);
-        const totalQty = Array.from(this.pendingLines.values()).reduce((acc, line) => acc + line.qty, 0);
-        const totalAmount = Array.from(this.pendingLines.values()).reduce(
-            (acc, line) => acc + ((line.unit_price || 0) * line.qty),
-            0
-        );
+        const lines = Array.from(this.el.querySelectorAll('.js_tynor_size_qty'))
+            .map((input) => {
+                const qty = parseInt(input.value || '0', 10);
+                const ptavId = parseInt(input.dataset.ptavId || '0', 10);
+                const priceCell = this.el.querySelector(`.js_tynor_size_price[data-ptav-id="${ptavId}"]`);
+                const unitPrice = parseFloat(priceCell?.dataset?.unitPrice || '0') || 0;
+                return {
+                    label: input.dataset.sizeLabel || 'Size',
+                    qty,
+                    unitPrice,
+                };
+            })
+            .filter((line) => line.qty > 0);
 
-        const typesText = entries.length ? entries.join(' | ') : 'none';
+        const typesText = lines.length ? lines.map((line) => `${line.label} x${line.qty}`).join(' | ') : 'none';
+        const totalQty = lines.reduce((sum, line) => sum + line.qty, 0);
+        const totalAmount = lines.reduce((sum, line) => sum + (line.qty * line.unitPrice), 0);
         summaryEl.textContent = `Types: ${typesText} | Total Qty: ${totalQty} | Total: ${this._formatPrice(totalAmount)}`;
-    }
-
-    _renderPendingLines() {
-        const listEl = this.el.querySelector('.js_tynor_bulk_selected_list');
-        if (!listEl) {
-            return;
-        }
-        if (!this.pendingLines.size) {
-            listEl.innerHTML = '<span class="text-muted small">No sizes added yet.</span>';
-            return;
-        }
-
-        const lineHtml = Array.from(this.pendingLines.values())
-            .map(
-                (line) =>
-                    `<span class="badge rounded-pill text-bg-light border me-1 mb-1">${line.label} x${line.qty} @ ${line.unit_price_display} = ${this._formatPrice((line.unit_price || 0) * line.qty)} <button type="button" class="btn-close btn-close-sm ms-1 js_tynor_remove_line" data-ptav-id="${line.ptav_id}" aria-label="Remove"></button></span>`
-            )
-            .join('');
-
-        listEl.innerHTML = lineHtml;
-    }
-
-    _onContainerClick(ev) {
-        const removeBtn = ev.target.closest('.js_tynor_remove_line');
-        if (!removeBtn) {
-            return;
-        }
-        const ptavId = parseInt(removeBtn.dataset.ptavId || '0', 10);
-        if (!ptavId) {
-            return;
-        }
-        this.pendingLines.delete(ptavId);
-        this._renderPendingLines();
-        this._updateSummary();
     }
 
     _showMessage(message, isSuccess) {
@@ -227,6 +207,15 @@ class TynorBulkSizeOrder extends Interaction {
         msgEl.classList.remove('text-success', 'text-danger');
     }
 
+    _formatPrice(amount) {
+        const value = Number.isFinite(amount) ? amount : 0;
+        const symbol = this.el.dataset.currencySymbol || '$';
+        const position = this.el.dataset.currencyPosition || 'before';
+        const decimals = parseInt(this.el.dataset.currencyDecimals || '2', 10);
+        const fixed = value.toFixed(Number.isNaN(decimals) ? 2 : decimals);
+        return position === 'after' ? `${fixed} ${symbol}` : `${symbol}${fixed}`;
+    }
+
     _updateCartCounter(cartQuantity) {
         browser.sessionStorage.setItem('website_sale_cart_quantity', cartQuantity);
         document.querySelectorAll('.my_cart_quantity').forEach((el) => {
@@ -237,60 +226,6 @@ class TynorBulkSizeOrder extends Interaction {
                 el.classList.add('d-none');
             }
         });
-    }
-
-    _updateSelectedPriceDisplay() {
-        const priceEl = this.el.querySelector('.js_tynor_single_price');
-        const sizeSelect = this.el.querySelector('.js_tynor_size_select');
-        if (!priceEl || !sizeSelect) {
-            return;
-        }
-        const selectedOption = sizeSelect.options[sizeSelect.selectedIndex];
-        const rawPrice = parseFloat(selectedOption?.dataset?.price || '0') || 0;
-        priceEl.textContent = selectedOption?.dataset?.priceDisplay || this._formatPrice(rawPrice);
-    }
-
-    _formatPrice(amount) {
-        const value = Number.isFinite(amount) ? amount : 0;
-        const symbol = this.el.dataset.currencySymbol || '$';
-        const position = this.el.dataset.currencyPosition || 'before';
-        const decimals = parseInt(this.el.dataset.currencyDecimals || '2', 10);
-        const fixed = value.toFixed(Number.isNaN(decimals) ? 2 : decimals);
-        return position === 'after' ? `${fixed} ${symbol}` : `${symbol}${fixed}`;
-    }
-
-    _playCartJumpAnimation(addedQty, sourceEl) {
-        if (!sourceEl) {
-            return;
-        }
-        const cartEl =
-            document.querySelector('.o_wsale_my_cart') ||
-            document.querySelector('a[href*="/shop/cart"]') ||
-            document.querySelector('.my_cart_quantity');
-        if (!cartEl) {
-            return;
-        }
-
-        const from = sourceEl.getBoundingClientRect();
-        const to = cartEl.getBoundingClientRect();
-        const bubble = document.createElement('div');
-        bubble.className = 'tynor-cart-jump-bubble';
-        bubble.textContent = `+${addedQty}`;
-        bubble.style.left = `${from.left + from.width / 2}px`;
-        bubble.style.top = `${from.top + from.height / 2}px`;
-        document.body.appendChild(bubble);
-
-        const dx = to.left + to.width / 2 - (from.left + from.width / 2);
-        const dy = to.top + to.height / 2 - (from.top + from.height / 2);
-        bubble.animate(
-            [
-                { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
-                { transform: `translate(${dx - 20}px, ${dy - 20}px) scale(0.55)`, opacity: 0.25 },
-            ],
-            { duration: 650, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)', fill: 'forwards' }
-        ).onfinish = () => {
-            bubble.remove();
-        };
     }
 }
 

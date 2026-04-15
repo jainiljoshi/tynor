@@ -55,63 +55,66 @@
                 t-att-data-currency-position="tynor_bulk_size_ctx.get('currency_position')"
                 t-att-data-currency-decimals="tynor_bulk_size_ctx.get('currency_decimals')"
             >
-                <div class="d-flex flex-wrap justify-content-between gap-2">
-                    <strong>Quick Size Order</strong>
-                    <span class="small text-muted">Pick a size, set quantity, add lines, then add all to cart.</span>
+                <div class="small text-muted">
+                    Fast wholesale order: click <strong>Add to cart</strong> above, enter quantities for all sizes in one popup, then add all at once.
                 </div>
-                <div class="small text-muted mt-2 js_tynor_bulk_summary">Types: none | Total Qty: 0 | Total: 0</div>
-                <div class="tynor-bulk-selected-lines mt-2 js_tynor_bulk_selected_list">
-                    <span class="text-muted small">No sizes added yet.</span>
-                </div>
-                <div class="tynor-bulk-builder mt-3">
-                    <div class="row g-2">
-                        <div class="col-12 col-sm-7">
-                            <label class="form-label mb-1">Size</label>
-                            <select class="form-select form-select-sm js_tynor_size_select">
-                                <t t-foreach="tynor_bulk_size_ctx['options']" t-as="size_opt">
-                                    <option
-                                        t-att-value="size_opt['ptav_id']"
-                                        t-att-data-size-label="size_opt['label']"
-                                        t-att-data-price="size_opt.get('price', 0.0)"
-                                        t-att-data-price-display="size_opt.get('price_display', '')"
-                                    >
-                                        <t t-out="size_opt['label']"/>
-                                    </option>
-                                </t>
-                            </select>
+            </div>
+            <div
+                t-if="not request.env.user._is_public() and product.tynor_enable_bulk_size_order and tynor_bulk_size_ctx['options']"
+                id="tynor_bulk_order_modal"
+                class="modal fade"
+                tabindex="-1"
+                aria-hidden="true"
+            >
+                <div class="modal-dialog modal-dialog-centered modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Quick Size Order</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"/>
                         </div>
-                        <div class="col-6 col-sm-3">
-                            <label class="form-label mb-1">Quantity</label>
-                            <input
-                                type="number"
-                                min="1"
-                                step="1"
-                                value="1"
-                                class="form-control form-control-sm js_tynor_single_qty"
-                            />
-                        </div>
-                        <div class="col-6 col-sm-2">
-                            <label class="form-label mb-1">Price</label>
-                            <div class="tynor-single-price js_tynor_single_price">
-                                <t t-out="tynor_bulk_size_ctx['options'][0].get('price_display', '')"/>
+                        <div class="modal-body js_tynor_bulk_modal_body">
+                            <div class="small text-muted mb-2">
+                                Enter quantity for each <t t-out="tynor_bulk_size_ctx.get('size_attribute_label') or 'size'"/> and add all in one click.
                             </div>
+                            <div class="small text-muted mb-3 js_tynor_bulk_summary">Types: none | Total Qty: 0 | Total: 0</div>
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th><t t-out="tynor_bulk_size_ctx.get('size_attribute_label') or 'Size'"/></th>
+                                            <th class="text-center">Qty</th>
+                                            <th class="text-end">Price</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr t-foreach="tynor_bulk_size_ctx['options']" t-as="size_opt">
+                                            <td>
+                                                <span t-out="size_opt['label']"/>
+                                            </td>
+                                            <td class="text-center">
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="1"
+                                                    value="0"
+                                                    class="form-control form-control-sm tynor-size-qty-input js_tynor_size_qty"
+                                                    t-att-data-ptav-id="size_opt['ptav_id']"
+                                                    t-att-data-size-label="size_opt['label']"
+                                                />
+                                            </td>
+                                            <td class="text-end fw-semibold js_tynor_size_price" t-att-data-ptav-id="size_opt['ptav_id']">-</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="small mt-2 js_tynor_bulk_message d-none"/>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-outline-secondary js_tynor_bulk_clear">Clear</button>
+                            <button type="button" class="btn btn-primary js_tynor_bulk_add_modal">Add All to Cart</button>
                         </div>
                     </div>
-                    <div class="tynor-bulk-builder-actions mt-2">
-                        <button type="button" class="btn btn-outline-primary btn-sm js_tynor_add_line">
-                            Add Size Line
-                        </button>
-                    </div>
                 </div>
-                <div class="tynor-bulk-size-actions mt-3">
-                    <button type="button" class="btn btn-primary btn-sm js_tynor_bulk_add">
-                        Add to Cart
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary btn-sm js_tynor_bulk_clear">
-                            Clear
-                    </button>
-                </div>
-                <div class="small mt-2 js_tynor_bulk_message d-none"/>
             </div>
         </xpath>
     </template>
