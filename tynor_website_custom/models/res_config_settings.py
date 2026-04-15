@@ -9,9 +9,10 @@ class ResConfigSettings(models.TransientModel):
         config_parameter="tynor.new_wholesaler_notification_active",
         default=False,
     )
-    tynor_new_wholesaler_notification_text = fields.Text(
+    tynor_new_wholesaler_notification_text = fields.Char(
         string="New Wholesaler Banner Text",
         config_parameter="tynor.new_wholesaler_notification_text",
+        size=1024,
         default="A new wholesale partner has joined our network!",
     )
     x_tynor_auto_invoice_card = fields.Boolean(
